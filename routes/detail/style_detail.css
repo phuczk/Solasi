@@ -1,0 +1,82 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background-color: #f9f9f9;
+  text-align: center;
+}
+
+h1 {
+  text-align: center;
+  color: #1DB954;
+}
+
+.loading {
+  text-align: center;
+  font-size: 18px;
+  color: #555;
+}
+
+.error-message {
+  color: red;
+  font-weight: bold;
+  text-align: center;
+}
+
+.track-detail {
+  max-width: 600px;
+  margin: 20px auto;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  text-align: center;
+
+}
+
+.track-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 200px;
+  object-fit: cover;
+}
+
+.track-name {
+  font-size: 24px;
+  color: #1DB954;
+}
+
+.track-artists {
+  font-size: 18px;
+  color: #555;
+}
+
+.track-album {
+  font-size: 16px;
+  color: #777;
+  margin-top: 10px;
+}
+
+.track-preview {
+  margin-top: 20px;
+}
+
+.track-preview audio {
+  width: 100%;
+}
+
+.play-button,
+.back-button {
+  padding: 10px 20px;
+  background-color: #1DB954;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  margin: 5px;
+}
+
+.play-button:hover,
+.back-button:hover {
+  background-color: #17a44d;
+}

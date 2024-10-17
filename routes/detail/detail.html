@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Chi Tiết Bài Hát</title>
+  <link rel="stylesheet" href="style_detail.css">
+</head>
+
+<body>
+  <h1>Chi Tiết Bài Hát</h1>
+  <div id="trackDetail" class="track-detail">
+    <div id="status" class="loading">Đang tải dữ liệu...</div>
+    <div id="message" class="error-message"></div>
+    <img id="trackImage" class="track-image" src="" alt="">
+    <div id="trackName" class="track-name"></div>
+    <div id="trackArtists" class="track-artists"></div>
+    <div id="trackAlbum" class="track-album"></div>
+    <div id="trackPreview" class="track-preview"></div>
+    <button id="playButton" class="play-button">Nghe Lại Bài Hát</button>
+    <button id="backButton" class="back-button">Quay Lại</button>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const clientId = '7edacf5546fa4bb58e20f54e69e47079';
+      const clientSecret = 'e538099ccc6b4da38cf1723b74542411';
+      const apiUrl = 'https://api.spotify.com/v1/tracks/';
+      const tokenUrl = 'https://accounts.spotify.com/api/token';
+
+      const statusDiv = document.getElementById('status');
+      const messageDiv = document.getElementById('message');
+      const trackImage = document.getElementById('trackImage');
+      const trackName = document.getElementById('trackName');
+      const trackArtists = document.getElementById('trackArtists');
+      const trackAlbum = document.getElementById('trackAlbum');
+      const trackPreview = document.getElementById('trackPreview');
+      const playButton = document.getElementById('playButton');
+      const backButton = document.getElementById('backButton');
+
+      let accessToken = '';
+      let audio = null; // Đối tượng âm thanh
+      let listeningTime = 0;
+      const targetListeningTime = 25; // 25 giây
+      let isListening = false; // Biến kiểm tra trạng thái nghe
+
+      async function getAccessToken() {
+        const credentials = `${clientId}:${clientSecret}`;
+        const encodedCredentials = btoa(credentials);
+
+        try {
+          const response = await fetch(tokenUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Basic ${encodedCredentials}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'grant_type=client_credentials',
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            accessToken = data.access_token;
+          } else {
+            throw new Error(`Failed to get access token: ${response.status}`);
+          }
+        } catch (error) {
+          console.error('Error fetching access token:', error);
+          showMessage('Đã xảy ra lỗi khi lấy Access Token.', 'error');
+        }
+      }
+
+      async function getTrackDetail(trackId) {
+        if (!accessToken) {
+          showMessage('Access Token không hợp lệ.', 'error');
+          return;
+        }
+
+        try {
+          const response = await fetch(`${apiUrl}${trackId}`, {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          });
+
+          if (response.ok) {
+            const track = await response.json();
+            displayTrackDetail(track);
+          } else {
+            throw new Error(`Failed to fetch track detail: ${response.status}`);
+          }
+        } catch (error) {
+          console.error('Error fetching track detail:', error);
+          showMessage('Đã xảy ra lỗi khi tải chi tiết bài hát.', 'error');
+        }
+      }
+
+      function displayTrackDetail(track) {
+        statusDiv.style.display = 'none';
+        trackImage.src = track.album.images[0]?.url || 'placeholder.jpg';
+        trackName.textContent = track.name;
+        trackArtists.textContent = track.artists.map(artist => artist.name).join(', ');
+        trackAlbum.textContent = `Album: ${track.album.name}`;
+
+        if (track.preview_url) {
+          // Tạo đối tượng âm thanh mới
+          audio = new Audio(track.preview_url);
+          audio.controls = true;
+          trackPreview.appendChild(audio);
+
+          // Xử lý sự kiện khi bắt đầu nghe
+          audio.addEventListener('play', () => {
+            if (!isListening) {
+              isListening = true; // Đánh dấu đang nghe
+              startListening(); // Gọi hàm bắt đầu nghe
+            }
+          });
+
+          // Xử lý sự kiện khi dừng nghe
+          audio.addEventListener('pause', () => {
+            isListening = false; // Đánh dấu không còn nghe
+          });
+
+          // Xử lý sự kiện khi kết thúc nghe
+          audio.addEventListener('ended', () => {
+            isListening = false; // Đánh dấu không còn nghe
+          });
+        } else {
+          trackPreview.textContent = 'Không có bản xem trước cho bài hát này.';
+        }
+
+        // Thêm sự kiện cho nút "Nghe Lại Bài Hát"
+        playButton.addEventListener('click', () => {
+          if (audio) {
+            audio.currentTime = 0; // Đặt lại thời gian phát về 0
+            audio.play(); // Phát lại âm thanh
+          }
+        });
+      }
+
+      function startListening() {
+        listeningTime = 0; // Reset thời gian nghe
+        const interval = setInterval(() => {
+          listeningTime++; // Tăng thời gian nghe theo giây
+
+          if (listeningTime >= targetListeningTime) {
+            clearInterval(interval); // Dừng nghe khi đủ 25 giây
+            completeListening();
+          }
+        }, 1000);
+
+        // Dừng lại nếu audio bị dừng hoặc kết thúc
+        audio.addEventListener('pause', () => clearInterval(interval));
+        audio.addEventListener('ended', () => clearInterval(interval));
+      }
+
+      function completeListening() {
+        // Cập nhật số lần nghe vào localStorage
+        let songsHeardToday = localStorage.getItem('songsHeardToday') || 0;
+        songsHeardToday = parseInt(songsHeardToday, 10) + 1; // Tăng số lần nghe
+        localStorage.setItem('songsHeardToday', songsHeardToday);
+        alert('Bạn đã nghe bài hát đủ 25 giây!'); // Thông báo cho người dùng
+      }
+
+      function showMessage(message, type) {
+        messageDiv.textContent = message;
+        if (type === 'success') {
+          messageDiv.className = 'success';
+        } else if (type === 'error') {
+          messageDiv.className = 'error';
+        }
+      }
+
+      backButton.addEventListener('click', () => {
+        window.history.back(); // Quay lại trang trước
+      });
+
+      getAccessToken().then(() => {
+        const trackId = new URLSearchParams(window.location.search).get('id');
+        if (trackId) {
+          getTrackDetail(trackId);
+        } else {
+          showMessage('Không có ID bài hát.', 'error');
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
