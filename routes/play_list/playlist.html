@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Danh Sách Playlist</title>
+    <link rel="stylesheet" href="style_playlist.css" />
+  </head>
+  <body>
+    <h1>Playlist của Tôi</h1>
+
+    <div id="playlistContainer" class="playlist-container">
+      <div id="userAddress" class="user-address"></div>
+    </div>
+
+    <div
+      id="songListContainer"
+      class="song-list-container"
+      style="display: none"
+    >
+      <h2>Bài hát trong Playlist</h2>
+      <ul id="songList"></ul>
+    </div>
+
+    <script>
+      const apiUrl =
+        "https://65bf081adcfcce42a6f31afe.mockapi.io/phuczk/demo_crud_api142857/";
+      let spotifyToken = "";
+      const userId = localStorage.getItem("userId");
+
+      // Hàm lấy access token từ Spotify
+      async function getSpotifyAccessToken() {
+        const clientId = "7edacf5546fa4bb58e20f54e69e47079"; // Thay bằng Client ID của bạn từ Spotify
+        const clientSecret = "e538099ccc6b4da38cf1723b74542411"; // Thay bằng Client Secret của bạn từ Spotify
+
+        const response = await fetch("https://accounts.spotify.com/api/token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization: "Basic " + btoa(clientId + ":" + clientSecret),
+          },
+          body: new URLSearchParams({
+            grant_type: "client_credentials",
+          }),
+        });
+
+        const data = await response.json();
+        return data.access_token;
+      }
+
+      async function fetchPlaylist() {
+        try {
+          const response = await fetch(`${apiUrl}playList?idUser=${userId}`);
+          if (!response.ok) throw new Error("Không thể lấy playlist.");
+
+          const playlistData = await response.json();
+          console.log(playlistData); // Kiểm tra dữ liệu trả về từ API
+
+          if (playlistData && playlistData[0] && playlistData[0].idSong) {
+            renderSongs(playlistData[0].idSong);
+          } else {
+            alert("Không có bài hát nào trong playlist.");
+          }
+        } catch (error) {
+          console.error("Lỗi khi lấy playlist:", error);
+        }
+      }
+
+      async function fetchSongInfo(idSong) {
+        if (!spotifyToken) {
+          spotifyToken = await getSpotifyAccessToken();
+        }
+
+        try {
+          const response = await fetch(
+            `https://api.spotify.com/v1/tracks/${idSong}`,
+            {
+              headers: {
+                Authorization: `Bearer ${spotifyToken}`,
+              },
+            }
+          );
+          if (!response.ok) throw new Error("Không thể lấy thông tin bài hát.");
+
+          const songData = await response.json();
+          return songData;
+        } catch (error) {
+          console.error("Lỗi khi lấy thông tin bài hát:", error);
+        }
+      }
+
+      async function renderSongs(idSongs) {
+        const songList = document.getElementById("songList");
+        songList.innerHTML = ""; // Xóa danh sách cũ
+
+        for (const idSong of idSongs) {
+          const songInfo = await fetchSongInfo(idSong);
+          if (songInfo) {
+            const listItem = document.createElement("li");
+            listItem.className = "track-item";
+            listItem.innerHTML = `
+              <strong><a  href="../detail/detail.html?id=${idSong}">${
+              songInfo.name
+            }</a></strong><br />
+              <em>${songInfo.artists
+                .map((artist) => artist.name)
+                .join(", ")}</em><br />
+              <img src="${songInfo.album.images[0].url}" alt="${
+              songInfo.name
+            }" width="100" />
+            `;
+            songList.appendChild(listItem);
+          }
+        }
+
+        // Hiển thị danh sách bài hát
+        document.getElementById("songListContainer").style.display = "block";
+      }
+
+      // Gọi API để lấy danh sách bài hát
+      fetchPlaylist();
+    </script>
+  </body>
+</html>

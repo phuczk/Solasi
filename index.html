@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng Ký & Đăng Nhập</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f9f9f9;
+      }
+
+      h1 {
+        text-align: center;
+        color: #1db954;
+      }
+
+      .form-container {
+        max-width: 400px;
+        margin: auto;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
+      button {
+        width: 100%;
+        padding: 10px;
+        background-color: #1db954;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #16b335;
+      }
+
+      .message {
+        text-align: center;
+        margin-top: 20px;
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Đăng Ký Tài Khoản</h1>
+    <div class="form-container" id="registerForm">
+      <input
+        type="text"
+        id="registerUsername"
+        placeholder="Tên đăng nhập"
+        required
+      />
+      <input
+        type="password"
+        id="registerPassword"
+        placeholder="Mật khẩu"
+        required
+      />
+      <button id="registerButton">Đăng Ký</button>
+      <div class="message" id="registerMessage"></div>
+    </div>
+
+    <h1>Đăng Nhập</h1>
+    <div class="form-container" id="loginForm">
+      <input
+        type="text"
+        id="loginUsername"
+        placeholder="Tên đăng nhập"
+        required
+      />
+      <input
+        type="password"
+        id="loginPassword"
+        placeholder="Mật khẩu"
+        required
+      />
+      <button id="loginButton">Đăng Nhập</button>
+      <div class="message" id="loginMessage"></div>
+    </div>
+
+    <script>
+      const apiUrl =
+        "https://65bf081adcfcce42a6f31afe.mockapi.io/phuczk/demo_crud_api142857/";
+
+      async function registerUser(username, password) {
+        try {
+          const response = await fetch(apiUrl + "user", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              userName: username,
+              password: password,
+              point: 0,
+              songHeard: 0,
+            }),
+          });
+
+          if (response.ok) {
+            document.getElementById("registerMessage").textContent =
+              "Đăng ký thành công!";
+          } else {
+            throw new Error("Đăng ký thất bại");
+          }
+        } catch (error) {
+          document.getElementById("registerMessage").textContent =
+            error.message;
+        }
+      }
+
+      async function loginUser(username, password) {
+        try {
+          const response = await fetch(apiUrl + "user");
+          const users = await response.json();
+
+          const user = users.find(
+            (u) => u.userName === username && u.password === password
+          );
+
+          if (user) {
+            // Lưu ID người dùng vào localStorage
+            localStorage.setItem("userId", user.id);
+
+            document.getElementById("loginMessage").textContent =
+              "Đăng nhập thành công!";
+            setTimeout(() => {
+              window.location.href = "../routes/home/index.html"; // Chuyển đến trang chi tiết
+            }, 1500);
+          } else {
+            document.getElementById("loginMessage").textContent =
+              "Tên đăng nhập hoặc mật khẩu không đúng.";
+          }
+        } catch (error) {
+          document.getElementById("loginMessage").textContent =
+            "Lỗi đăng nhập!";
+        }
+      }
+
+      document
+        .getElementById("registerButton")
+        .addEventListener("click", () => {
+          const username = document.getElementById("registerUsername").value;
+          const password = document.getElementById("registerPassword").value;
+
+          if (username && password) {
+            registerUser(username, password);
+          } else {
+            document.getElementById("registerMessage").textContent =
+              "Vui lòng điền đầy đủ thông tin.";
+          }
+        });
+
+      document.getElementById("loginButton").addEventListener("click", () => {
+        const username = document.getElementById("loginUsername").value;
+        const password = document.getElementById("loginPassword").value;
+
+        if (username && password) {
+          loginUser(username, password);
+        } else {
+          document.getElementById("loginMessage").textContent =
+            "Vui lòng điền đầy đủ thông tin.";
+        }
+      });
+    </script>
+  </body>
+</html>

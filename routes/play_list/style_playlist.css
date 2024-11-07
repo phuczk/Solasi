@@ -1,0 +1,61 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background-color: #f9f9f9;
+}
+
+h1 {
+  text-align: center;
+  color: #1db954;
+}
+
+.playlist-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#userAddress {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.song-list-container {
+  text-align: center;
+}
+
+#songList {
+  list-style-type: none;
+  padding: 0;
+}
+
+.track-item {
+  background-color: #fff;
+  border-radius: 8px;
+  margin: 10px;
+  padding: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  display: inline-block;
+  width: 250px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.track-item img {
+  margin-bottom: 10px;
+}
+
+.track-item strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.track-item em {
+  font-size: 12px;
+  color: #555;
+}
+
+.message {
+  color: red;
+  text-align: center;
+  margin-top: 20px;
+}

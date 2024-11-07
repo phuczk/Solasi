@@ -1,91 +1,209 @@
 <!DOCTYPE html>
 <html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Nhiệm Vụ Hàng Ngày</title>
+    <link rel="stylesheet" href="style_daily_task.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/solana-web3.js/1.29.4/solanaWeb3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  </head>
+  <body>
+    <h1>Nhiệm Vụ Hàng Ngày</h1>
+    <div class="task-container">
+      <p>Điểm của bạn: <span id="points">0</span></p>
+      <p>Số bài hát đã nghe hôm nay: <span id="songsToday">0</span></p>
+      <p>Tổng số bài hát đã nghe: <span id="totalSongs">0</span></p>
+      <button id="checkInButton">Điểm danh hôm nay</button>
+      <button id="exchangeButton">Đổi điểm ra SOL</button>
+      <p class="message" id="message"></p>
 
-<head>
-  <meta charset="UTF-8">
-  <title>Nhiệm Vụ Hàng Ngày</title>
-  <link rel="stylesheet" href="style.css">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f9f9f9;
-    }
+      <canvas id="dailyChart" class="chart"></canvas>
+    </div>
 
-    h1 {
-      text-align: center;
-      color: #1DB954;
-    }
+    <script>
+      const userId = localStorage.getItem("userId");
+      const userApiUrl = `https://65bf081adcfcce42a6f31afe.mockapi.io/phuczk/demo_crud_api142857/user/${userId}`;
+      let points = 0;
+      let songsToday = 0;
+      let totalSongs = 0;
+      let lastCheckInDate = "";
+      let dailyPoints = [250, 500, 360, 900, 910, 1200, 500];
 
-    .daily-task {
-      background-color: #fff;
-      padding: 20px;
-      margin: 20px 0;
-      border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
+      // Khởi tạo biểu đồ
+      const ctx = document.getElementById("dailyChart").getContext("2d");
+      const dailyChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: [], // Các ngày
+          datasets: [
+            {
+              label: "Điểm Hàng Ngày",
+              data: dailyPoints, // Dữ liệu điểm
+              fill: false,
+              borderColor: "#16b335",
+              tension: 0.1,
+            },
+          ],
+        },
+      });
 
-    .daily-task h2 {
-      color: #1DB954;
-    }
+      function updateChartData() {
+        const chartLabels = []; // Tạo danh sách ngày cho biểu đồ, ví dụ: ['Ngày 1', 'Ngày 2', ...]
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          chartLabels.push(date.toLocaleDateString());
+        }
 
-    .error-message {
-      color: red;
-      font-weight: bold;
-      text-align: center;
-    }
-  </style>
-</head>
-
-<body>
-  <h1>Nhiệm Vụ Hàng Ngày</h1>
-
-  <div class="daily-task">
-    <h2>Nhiệm Vụ:</h2>
-    <p id="taskMessage">Bạn đã nghe <span id="songsHeard">0</span> bài hát hôm nay.</p>
-    <p id="pointsMessage">Bạn có <span id="points">0</span> điểm.</p> <!-- Hiển thị điểm số -->
-  </div>
-
-  <script>
-    let songsHeardToday = 0; // Số bài hát đã nghe
-    let points = 0; // Điểm số
-    const songsList = JSON.parse(localStorage.getItem('songsList')) || {}; // Lưu trữ danh sách bài hát đã nghe
-
-    // Hàm để kiểm tra và làm mới số lượng bài hát đã nghe nếu sang ngày mới
-    function checkForNewDay() {
-      const lastRecordedDate = localStorage.getItem('lastRecordedDate');
-      const currentDate = new Date().toLocaleDateString();
-
-      if (lastRecordedDate !== currentDate) {
-        songsHeardToday = 0; // Đặt lại số bài hát đã nghe
-        localStorage.setItem('songsHeardToday', songsHeardToday); // Lưu số bài hát đã nghe
-        localStorage.setItem('lastRecordedDate', currentDate); // Cập nhật ngày
-      } else {
-        songsHeardToday = parseInt(localStorage.getItem('songsHeardToday')) || 0; // Lấy số bài hát đã nghe
+        // Cập nhật dữ liệu vào biểu đồ
+        dailyChart.data.labels = chartLabels; // Thêm nhãn (label) cho các ngày
+        dailyChart.data.datasets[0].data = dailyPoints; // Dữ liệu điểm cho biểu đồ
+        dailyChart.update(); // Cập nhật biểu đồ
       }
 
-      // Cập nhật số điểm
-      points = parseInt(localStorage.getItem('points')) || 0; // Lấy số điểm hiện tại
-      document.getElementById('songsHeard').textContent = songsHeardToday; // Hiển thị số bài hát đã nghe
-      document.getElementById('points').textContent = points; // Hiển thị số điểm
-    }
+      async function loadUserData() {
+        try {
+          const response = await fetch(userApiUrl);
+          if (!response.ok)
+            throw new Error("Không lấy được dữ liệu người dùng.");
 
-    // Hàm để cập nhật số bài hát đã nghe và điểm số
-    function updateSongsHeard() {
-      songsHeardToday++; // Tăng số bài hát đã nghe
-      localStorage.setItem('songsHeardToday', songsHeardToday); // Lưu số bài hát đã nghe
+          const userData = await response.json();
+          points = userData.point;
+          songsToday = userData.songsToday;
+          totalSongs = userData.songHeard;
+          lastCheckInDate = userData.lastCheckInDate || "";
 
-      points++; // Tăng điểm số
-      localStorage.setItem('points', points); // Lưu điểm số
-      document.getElementById('songsHeard').textContent = songsHeardToday; // Cập nhật hiển thị
-      document.getElementById('points').textContent = points; // Cập nhật hiển thị
-    }
+          document.getElementById("points").textContent = points;
+          document.getElementById("songsToday").textContent = songsToday;
+          document.getElementById("totalSongs").textContent = totalSongs;
 
-    checkForNewDay(); // Gọi hàm khi trang tải
+          updateChartData(); // Gọi hàm cập nhật biểu đồ
+        } catch (error) {
+          console.error("Lỗi khi lấy dữ liệu người dùng:", error);
+        }
+      }
 
-    // Ví dụ: Gọi hàm updateSongsHeard khi người dùng nghe một bài hát
-    // updateSongsHeard(); // Bỏ comment khi có sự kiện nghe bài hát
-  </script>
-</body>
+      function isNewDay() {
+        const currentDate = new Date().toLocaleDateString();
+        return lastCheckInDate !== currentDate;
+      }
 
+      async function updatePointsAndSongs() {
+        if (isNewDay()) {
+          points += 10;
+          songsToday = 1;
+          totalSongs += 1;
+          lastCheckInDate = new Date().toLocaleDateString();
+
+          const updatedData = {
+            point: points,
+            songsToday: songsToday,
+            songHeard: totalSongs,
+            lastCheckInDate: lastCheckInDate,
+          };
+
+          try {
+            const response = await fetch(userApiUrl, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(updatedData),
+            });
+
+            if (response.ok) {
+              document.getElementById("points").textContent = points;
+              document.getElementById("songsToday").textContent = songsToday;
+              document.getElementById("totalSongs").textContent = totalSongs;
+              document.getElementById("message").textContent =
+                "Bạn đã điểm danh và được cộng 10 điểm!";
+              dailyPoints.push(10); // Thêm điểm mới vào biểu đồ
+              updateChartData(); // Cập nhật lại biểu đồ
+            } else {
+              throw new Error("Không cập nhật được dữ liệu.");
+            }
+          } catch (error) {
+            console.error("Lỗi khi cập nhật dữ liệu:", error);
+            document.getElementById("message").textContent =
+              "Đã xảy ra lỗi khi cập nhật điểm và số lần nghe.";
+          }
+        } else {
+          document.getElementById("message").textContent =
+            "Bạn đã điểm danh hôm nay rồi!";
+        }
+      }
+
+      async function connectWallet() {
+        if (window.solana && window.solana.isPhantom) {
+          try {
+            const resp = await window.solana.connect();
+            return resp.publicKey.toString();
+          } catch (err) {
+            console.error("Lỗi kết nối ví:", err);
+            return null;
+          }
+        } else {
+          alert("Vui lòng cài đặt Phantom Wallet.");
+          return null;
+        }
+      }
+
+      async function exchangePointsToSOL() {
+        const conversionRate = 0.01;
+        const minPointsForExchange = 100;
+
+        if (points >= minPointsForExchange) {
+          const solAmount = (points / 100) * conversionRate;
+          const recipientPublicKey = await connectWallet();
+
+          if (recipientPublicKey) {
+            const transaction = new solanaWeb3.Transaction().add(
+              solanaWeb3.SystemProgram.transfer({
+                fromPubkey: new solanaWeb3.PublicKey(recipientPublicKey),
+                toPubkey: new solanaWeb3.PublicKey(
+                  "<Địa chỉ ví nhận trên devnet>"
+                ),
+                lamports: solanaWeb3.LAMPORTS_PER_SOL * solAmount,
+              })
+            );
+
+            try {
+              const { signature } = await window.solana.signAndSendTransaction(
+                transaction
+              );
+              console.log("Transaction Signature:", signature);
+
+              points = 0;
+              await fetch(userApiUrl, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ point: points }),
+              });
+
+              document.getElementById("points").textContent = points;
+              document.getElementById(
+                "message"
+              ).textContent = `Bạn đã đổi ${solAmount.toFixed(
+                4
+              )} SOL thành công!`;
+            } catch (error) {
+              console.error("Lỗi khi đổi điểm sang SOL:", error);
+              document.getElementById("message").textContent =
+                "Đã xảy ra lỗi khi thực hiện giao dịch.";
+            }
+          }
+        } else {
+          document.getElementById("message").textContent =
+            "Bạn cần ít nhất 100 điểm để đổi ra SOL!";
+        }
+      }
+
+      document
+        .getElementById("checkInButton")
+        .addEventListener("click", updatePointsAndSongs);
+      document
+        .getElementById("exchangeButton")
+        .addEventListener("click", exchangePointsToSOL);
+
+      loadUserData();
+    </script>
+  </body>
 </html>

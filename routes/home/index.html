@@ -1,237 +1,331 @@
 <!DOCTYPE html>
 <html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Danh Sách Bài Hát Spotify</title>
+    <link rel="stylesheet" href="style_index.css" />
+  </head>
 
-<head>
-  <meta charset="UTF-8">
-  <title>Danh Sách Bài Hát Spotify</title>
-  <link rel="stylesheet" href="style_index.css">
-</head>
+  <body>
+    <h1>Danh Sách Bài Hát Spotify</h1>
 
-<body>
-  <h1>Danh Sách Bài Hát Spotify</h1>
+    <!-- Form tìm kiếm bài hát -->
+    <div class="search-form">
+      <input
+        type="text"
+        id="searchQuery"
+        placeholder="Nhập từ khóa tìm kiếm..."
+        required
+      />
+      <button id="searchButton">Tìm Kiếm</button>
+    </div>
 
-  <!-- Form tìm kiếm bài hát -->
-  <div class="search-form">
-    <input type="text" id="searchQuery" placeholder="Nhập từ khóa tìm kiếm..." required>
-    <button id="searchButton">Tìm Kiếm</button>
-  </div>
+    <!-- Thông báo trạng thái -->
+    <div id="status" class="loading">Đang tải dữ liệu...</div>
+    <div id="message"></div>
 
-  <!-- Thông báo trạng thái -->
-  <div id="status" class="loading">Đang tải dữ liệu...</div>
-  <div id="message"></div>
+    <a
+      href="../daily_task/daily_task.html"
+      style="display: block; text-align: center; margin: 20px 0; color: #1db954"
+      >Xem Nhiệm Vụ Hàng Ngày</a
+    >
 
-  <!-- Thêm vào trong body của index.html -->
-  <a href="../daily_task/daily_task.html"
-    style="display: block; text-align: center; margin: 20px 0; color: #1DB954;">Xem Nhiệm Vụ Hàng Ngày</a>
+    <a
+      href="../play_list/playlist.html"
+      style="display: block; text-align: center; margin: 20px 0; color: #1db954"
+      >Xem Playlist</a
+    >
 
+    <!-- Danh sách bài hát -->
+    <ul id="tracksList" class="tracks-list" style="display: none"></ul>
 
-  <!-- Danh sách bài hát -->
-  <ul id="tracksList" class="tracks-list" style="display: none;"></ul>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const clientId = "7edacf5546fa4bb58e20f54e69e47079";
+        const clientSecret = "e538099ccc6b4da38cf1723b74542411";
+        const apiUrl = "https://api.spotify.com/v1/search";
+        const tokenUrl = "https://accounts.spotify.com/api/token";
+        const playlistApiBaseUrl =
+          "https://65bf081adcfcce42a6f31afe.mockapi.io/phuczk/demo_crud_api142857/playList";
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Lưu ý: Bao gồm Client Secret trong mã JavaScript phía client là không an toàn.
-      // Đây chỉ là giải pháp tạm thời cho mục đích học tập hoặc phát triển cá nhân.
-      const clientId = '7edacf5546fa4bb58e20f54e69e47079';
-      const clientSecret = 'e538099ccc6b4da38cf1723b74542411';
-      const apiUrl = 'https://api.spotify.com/v1/search';
-      const tokenUrl = 'https://accounts.spotify.com/api/token';
+        const statusDiv = document.getElementById("status");
+        const messageDiv = document.getElementById("message");
+        const tracksList = document.getElementById("tracksList");
+        const searchButton = document.getElementById("searchButton");
+        const searchQueryInput = document.getElementById("searchQuery");
 
-      const statusDiv = document.getElementById('status');
-      const messageDiv = document.getElementById('message');
-      const tracksList = document.getElementById('tracksList');
-      const searchButton = document.getElementById('searchButton');
-      const searchQueryInput = document.getElementById('searchQuery');
+        let accessToken = "";
+        let currentQuery = "";
+        let offset = 0;
+        const limit = 20;
+        let isLoading = false;
+        let hasMore = true;
 
-      let accessToken = '';
-      let currentQuery = '';
-      let offset = 0;
-      const limit = 10;
-      let isLoading = false;
-      let hasMore = true;
+        async function getAccessToken() {
+          const credentials = `${clientId}:${clientSecret}`;
+          const encodedCredentials = btoa(credentials);
 
-      // Hàm để lấy Access Token từ Spotify
-      async function getAccessToken() {
-        const credentials = `${clientId}:${clientSecret}`;
-        const encodedCredentials = btoa(credentials);
+          try {
+            const response = await fetch(tokenUrl, {
+              method: "POST",
+              headers: {
+                Authorization: `Basic ${encodedCredentials}`,
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+              body: "grant_type=client_credentials",
+            });
 
-        try {
-          const response = await fetch(tokenUrl, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Basic ${encodedCredentials}`,
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'grant_type=client_credentials',
+            if (response.ok) {
+              const data = await response.json();
+              accessToken = data.access_token;
+              console.log("Access Token:", accessToken);
+              if (currentQuery === "") {
+                loadMoreTracks();
+              }
+            } else {
+              const errorData = await response.json();
+              throw new Error(
+                `Failed to get access token: ${response.status} - ${
+                  errorData.error_description || response.statusText
+                }`
+              );
+            }
+          } catch (error) {
+            console.error("Error fetching access token:", error);
+            showMessage("Đã xảy ra lỗi khi lấy Access Token.", "error");
+          }
+        }
+
+        async function searchTracks(query, newSearch = true) {
+          if (!accessToken) {
+            showMessage("Access Token không hợp lệ.", "error");
+            return;
+          }
+
+          if (newSearch) {
+            offset = 0;
+            hasMore = true;
+            tracksList.innerHTML = "";
+          }
+
+          if (!hasMore) return;
+
+          isLoading = true;
+          showLoading(true);
+
+          try {
+            const response = await fetch(
+              `${apiUrl}?q=${encodeURIComponent(
+                query
+              )}&type=track&limit=${limit}&offset=${offset}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              }
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              const tracks = data.tracks.items.filter(
+                (track) => track.preview_url
+              );
+              displayTracks(tracks);
+              offset += limit;
+              hasMore = tracks.length === limit;
+            } else {
+              const errorData = await response.json();
+              throw new Error(
+                `Failed to fetch tracks: ${response.status} - ${errorData.error.message}`
+              );
+            }
+          } catch (error) {
+            console.error("Error fetching tracks:", error);
+            showMessage("Đã xảy ra lỗi khi tải danh sách bài hát.", "error");
+          } finally {
+            isLoading = false;
+            showLoading(false);
+          }
+        }
+
+        function displayTracks(tracks) {
+          if (tracks.length === 0 && offset === 0) {
+            showMessage(
+              "Không tìm thấy bài hát nào có bản xem trước.",
+              "error"
+            );
+            tracksList.style.display = "none";
+            return;
+          }
+
+          tracks.forEach((track) => {
+            const listItem = document.createElement("li");
+            listItem.className = "track-item";
+
+            const albumImage = document.createElement("img");
+            albumImage.src =
+              track.album.images[0]?.url || "https://via.placeholder.com/60";
+            albumImage.alt = track.name;
+            albumImage.className = "track-image";
+            listItem.appendChild(albumImage);
+
+            const trackInfo = document.createElement("div");
+            trackInfo.className = "track-info";
+
+            const trackName = document.createElement("a");
+            trackName.href = `../detail/detail.html?id=${track.id}`;
+            trackName.textContent = track.name;
+            trackName.className = "track-name";
+            trackInfo.appendChild(trackName);
+
+            const artists = track.artists
+              .map((artist) => artist.name)
+              .join(", ");
+            const trackArtists = document.createElement("div");
+            trackArtists.textContent = artists;
+            trackArtists.className = "track-artists";
+            trackInfo.appendChild(trackArtists);
+
+            const addToPlaylistButton = document.createElement("button");
+            addToPlaylistButton.textContent = "Thêm vào Playlist";
+            addToPlaylistButton.className = "add-to-playlist-button";
+            addToPlaylistButton.addEventListener("click", () =>
+              addToPlaylist(track.id)
+            );
+            trackInfo.appendChild(addToPlaylistButton);
+
+            listItem.appendChild(trackInfo);
+            tracksList.appendChild(listItem);
           });
 
-          if (response.ok) {
-            const data = await response.json();
-            accessToken = data.access_token;
-            console.log('Access Token:', accessToken);
-            // Sau khi lấy token, nếu không có query, load các bài hát mặc định
-            if (currentQuery === '') {
-              loadMoreTracks();
+          tracksList.style.display = "block";
+        }
+
+        async function addToPlaylist(songId) {
+          try {
+            const userId = localStorage.getItem("userId");
+            if (!userId) {
+              showMessage("Không tìm thấy userId trong localStorage.", "error");
+              return;
             }
-          } else {
-            const errorData = await response.json();
-            throw new Error(`Failed to get access token: ${response.status} - ${errorData.error_description || response.statusText}`);
+
+            // Lấy danh sách playlist của user từ API
+            const playlistApiUrl = `${playlistApiBaseUrl}?idUser=${userId}`;
+            const response = await fetch(playlistApiUrl);
+            if (!response.ok)
+              throw new Error("Không lấy được dữ liệu playlist.");
+
+            const playlistData = await response.json();
+
+            // Kiểm tra nếu không có playlist nào cho user, tạo playlist mới
+            if (playlistData.length === 0) {
+              // Tạo playlist mới với userId, idSong là một mảng rỗng
+              const newPlaylist = {
+                idUser: userId,
+                idSong: [songId], // Bắt đầu playlist với bài hát đã chọn
+              };
+
+              const createResponse = await fetch(playlistApiBaseUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newPlaylist),
+              });
+
+              if (createResponse.ok) {
+                showMessage(
+                  "Playlist đã được tạo và bài hát được thêm vào.",
+                  "success"
+                );
+              } else {
+                throw new Error("Không tạo được Playlist mới.");
+              }
+            } else {
+              // Playlist đã tồn tại, kiểm tra bài hát đã có trong playlist chưa
+              const playlist = playlistData[0]; // Giả sử chỉ có một playlist cho mỗi user
+              if (playlist.idSong.includes(songId)) {
+                showMessage("Bài hát đã có trong Playlist.", "error");
+                return;
+              }
+
+              // Thêm bài hát vào danh sách idSong
+              playlist.idSong.push(songId);
+
+              // Cập nhật lại playlist với idSong mới
+              const updateResponse = await fetch(
+                `${playlistApiBaseUrl}/${playlist.id}`,
+                {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    idUser: playlist.idUser, // idUser
+                    idSong: playlist.idSong, // Cập nhật idSong
+                  }),
+                }
+              );
+
+              if (updateResponse.ok) {
+                showMessage("Bài hát đã được thêm vào Playlist.", "success");
+              } else {
+                throw new Error("Không cập nhật được Playlist.");
+              }
+            }
+          } catch (error) {
+            console.error("Lỗi khi thêm vào Playlist:", error);
+            showMessage("Đã xảy ra lỗi khi thêm vào Playlist.", "error");
           }
-        } catch (error) {
-          console.error('Error fetching access token:', error);
-          showMessage('Đã xảy ra lỗi khi lấy Access Token.', 'error');
-        }
-      }
-
-      // Hàm để tìm kiếm bài hát
-      async function searchTracks(query, newSearch = true) {
-        if (!accessToken) {
-          showMessage('Access Token không hợp lệ.', 'error');
-          return;
         }
 
-        if (newSearch) {
+        function showMessage(message, type) {
+          messageDiv.textContent = message;
+          messageDiv.className =
+            type === "success" ? "success" : "error-message";
+          setTimeout(() => {
+            messageDiv.textContent = "";
+            messageDiv.className = "";
+          }, 5000);
+        }
+
+        function showLoading(show) {
+          statusDiv.style.display = show ? "block" : "none";
+        }
+
+        searchButton.addEventListener("click", async () => {
+          const query = searchQueryInput.value.trim();
+          if (query === "") {
+            showMessage("Vui lòng nhập từ khóa tìm kiếm.", "error");
+            return;
+          }
+
+          currentQuery = query;
           offset = 0;
           hasMore = true;
-          tracksList.innerHTML = '';
-        }
-
-        if (!hasMore) return;
-
-        isLoading = true;
-        showLoading(true);
-
-        try {
-          const response = await fetch(`${apiUrl}?q=${encodeURIComponent(query)}&type=track&limit=${limit}&offset=${offset}`, {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-            },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            const tracks = data.tracks.items.filter(track => track.preview_url); // Lọc chỉ các bài hát có preview_url
-            displayTracks(tracks);
-            offset += limit;
-            hasMore = tracks.length === limit;
-          } else {
-            const errorData = await response.json();
-            throw new Error(`Failed to fetch tracks: ${response.status} - ${errorData.error.message}`);
-          }
-        } catch (error) {
-          console.error('Error fetching tracks:', error);
-          showMessage('Đã xảy ra lỗi khi tải danh sách bài hát.', 'error');
-        } finally {
-          isLoading = false;
-          showLoading(false);
-        }
-      }
-
-      // Hàm để hiển thị danh sách bài hát
-      function displayTracks(tracks) {
-        if (tracks.length === 0 && offset === 0) {
-          showMessage('Không tìm thấy bài hát nào có bản xem trước.', 'error');
-          tracksList.style.display = 'none';
-          return;
-        }
-
-        tracks.forEach(track => {
-          const listItem = document.createElement('li');
-          listItem.className = 'track-item';
-
-          // Ảnh album
-          const albumImage = document.createElement('img');
-          albumImage.src = track.album.images[0]?.url || 'https://via.placeholder.com/60';
-          albumImage.alt = track.name;
-          albumImage.className = 'track-image';
-          listItem.appendChild(albumImage);
-
-          // Thông tin bài hát
-          const trackInfo = document.createElement('div');
-          trackInfo.className = 'track-info';
-
-          // Tên bài hát (liên kết đến detail.html)
-          const trackName = document.createElement('a');
-          trackName.href = `../detail/detail.html?id=${track.id}`; // Gắn song ID vào URL
-          trackName.textContent = track.name;
-          trackName.className = 'track-name';
-          trackInfo.appendChild(trackName);
-
-          // Tên nghệ sĩ
-          const artists = track.artists.map(artist => artist.name).join(', ');
-          const trackArtists = document.createElement('div');
-          trackArtists.textContent = artists;
-          trackArtists.className = 'track-artists';
-          trackInfo.appendChild(trackArtists);
-
-          listItem.appendChild(trackInfo);
-          tracksList.appendChild(listItem);
+          tracksList.innerHTML = "";
+          showMessage("", "");
+          searchTracks(query, true);
         });
 
-        tracksList.style.display = 'block';
-      }
+        window.addEventListener("scroll", () => {
+          if (
+            window.innerHeight + window.scrollY >=
+              document.body.offsetHeight - 500 &&
+            !isLoading &&
+            hasMore
+          ) {
+            loadMoreTracks();
+          }
+        });
 
-      // Hàm để hiển thị thông báo
-      function showMessage(message, type) {
-        messageDiv.textContent = message;
-        if (type === 'success') {
-          messageDiv.className = 'success';
-        } else if (type === 'error') {
-          messageDiv.className = 'error-message';
-        } else {
-          messageDiv.className = '';
-        }
-        // 5 giây sau sẽ ẩn thông báo
-        setTimeout(() => {
-          messageDiv.textContent = '';
-          messageDiv.className = '';
-        }, 5000);
-      }
-
-      // Hàm để hiển thị hoặc ẩn loading
-      function showLoading(show) {
-        statusDiv.style.display = show ? 'block' : 'none';
-      }
-
-      // Sự kiện khi nhấn nút tìm kiếm
-      searchButton.addEventListener('click', async () => {
-        const query = searchQueryInput.value.trim();
-        if (query === '') {
-          showMessage('Vui lòng nhập từ khóa tìm kiếm.', 'error');
-          return;
+        function loadMoreTracks() {
+          if (currentQuery === "") {
+            const defaultQuery = "hay trao cho anh";
+            searchTracks(defaultQuery, false);
+          } else {
+            searchTracks(currentQuery, false);
+          }
         }
 
-        currentQuery = query;
-        offset = 0;
-        hasMore = true;
-        tracksList.innerHTML = '';
-        showMessage('', '');
-        searchTracks(query, true);
+        getAccessToken();
       });
-
-      // Sự kiện khi cuộn trang để thực hiện Load More
-      window.addEventListener('scroll', () => {
-        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500 && !isLoading && hasMore) {
-          loadMoreTracks();
-        }
-      });
-
-      // Hàm để Load More Tracks
-      function loadMoreTracks() {
-        if (currentQuery === '') {
-          // Nếu không có tìm kiếm, sử dụng một từ khóa mặc định
-          const defaultQuery = 'hay trao cho anh';
-          searchTracks(defaultQuery, false);
-        } else {
-          // Nếu có tìm kiếm, tiếp tục với query hiện tại
-          searchTracks(currentQuery, false);
-        }
-      }
-
-      // Khởi động và lấy Access Token
-      getAccessToken();
-    });
-  </script>
-</body>
-
+    </script>
+  </body>
 </html>
