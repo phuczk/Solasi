@@ -2,42 +2,84 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Danh Sách Bài Hát Spotify</title>
     <link rel="stylesheet" href="style_index.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
   </head>
 
   <body>
-    <h1>Danh Sách Bài Hát Spotify</h1>
+    
+    <div class="sidebar">
+      <h2>📖 Solasi </h2>
+      <ul>
+          <li><a href="../daily_task/daily_task.html" title="Nhiệm Vụ Hàng Ngày">📅 Nhiệm Vụ Hàng Ngày</a></li>
+          <li><a href="../play_list/playlist.html" title="Xem Playlist">🎵 Xem Playlist</a></li>
+      </ul>
+  </div>
+  
+  
+  
 
-    <!-- Form tìm kiếm bài hát -->
-    <div class="search-form">
-      <input
-        type="text"
-        id="searchQuery"
-        placeholder="Nhập từ khóa tìm kiếm..."
-        required
-      />
-      <button id="searchButton">Tìm Kiếm</button>
+    <!-- Nội dung chính bên phải -->
+    <div class="main-content">
+      
+
+
+      <div class="banner-container">
+        <div class="banner-slide" id="banner1">
+          <img src="https://www.shutterstock.com/shutterstock/photos/1597115659/display_1500/stock-vector-music-festival-banner-background-template-with-colorful-trend-colors-poster-for-print-material-1597115659.jpg" alt="Banner 1">
+        </div>
+        <div class="banner-slide" id="banner2">
+          <img src="https://thietkewebchuyen.com/wp-content/uploads/thiet-ke-banner-website-anh-bia-Facebook-am-nhac-1.jpg" alt="Banner 2">
+        </div>
+        <div class="banner-slide" id="banner3">
+          <img src="https://thietkewebchuyen.com/wp-content/uploads/thiet-ke-banner-website-anh-bia-Facebook-am-nhac-4.jpg" alt="Banner 3">
+        </div>
+      </div>
+
+      
+      
+      <div class="search-container">
+        <div class="search-bar">
+          <input 
+            type="text" 
+            placeholder="Tìm kiếm bài hát, nghệ sĩ, album..." 
+            class="search-input" 
+            id="searchQuery"
+          />
+          <button id="searchButton" class="search-btn">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+      </div>
+      
+
+      
+
+      <!-- Form tìm kiếm bài hát
+      <div class="search-form">
+        <input
+          type="text"
+          id="searchQuery"
+          placeholder="Nhập từ khóa tìm kiếm..."
+          required
+        />
+        <button id="searchButton">Tìm Kiếm</button>
+      </div> -->
+
+      <!-- Thông báo trạng thái -->
+      <div id="status" class="loading">Đang tải dữ liệu...</div>
+      <div id="message">
+        
+      </div>
+
+      <!-- Danh sách bài hát -->
+      <div class="track-list-container">
+        <ul id="tracksList" class="tracks-list" style="display: none"></ul>
+      </div>
     </div>
-
-    <!-- Thông báo trạng thái -->
-    <div id="status" class="loading">Đang tải dữ liệu...</div>
-    <div id="message"></div>
-
-    <a
-      href="../daily_task/daily_task.html"
-      style="display: block; text-align: center; margin: 20px 0; color: #1db954"
-      >Xem Nhiệm Vụ Hàng Ngày</a
-    >
-
-    <a
-      href="../play_list/playlist.html"
-      style="display: block; text-align: center; margin: 20px 0; color: #1db954"
-      >Xem Playlist</a
-    >
-
-    <!-- Danh sách bài hát -->
-    <ul id="tracksList" class="tracks-list" style="display: none"></ul>
 
     <script>
       document.addEventListener("DOMContentLoaded", () => {
@@ -45,9 +87,7 @@
         const clientSecret = "e538099ccc6b4da38cf1723b74542411";
         const apiUrl = "https://api.spotify.com/v1/search";
         const tokenUrl = "https://accounts.spotify.com/api/token";
-        const playlistApiBaseUrl =
-          "https://65bf081adcfcce42a6f31afe.mockapi.io/phuczk/demo_crud_api142857/playList";
-
+        
         const statusDiv = document.getElementById("status");
         const messageDiv = document.getElementById("message");
         const tracksList = document.getElementById("tracksList");
@@ -115,9 +155,7 @@
 
           try {
             const response = await fetch(
-              `${apiUrl}?q=${encodeURIComponent(
-                query
-              )}&type=track&limit=${limit}&offset=${offset}`,
+              `${apiUrl}?q=${encodeURIComponent(query)}&type=track&limit=${limit}&offset=${offset}`,
               {
                 headers: {
                   Authorization: `Bearer ${accessToken}`,
@@ -127,9 +165,7 @@
 
             if (response.ok) {
               const data = await response.json();
-              const tracks = data.tracks.items.filter(
-                (track) => track.preview_url
-              );
+              const tracks = data.tracks.items.filter((track) => track.preview_url);
               displayTracks(tracks);
               offset += limit;
               hasMore = tracks.length === limit;
@@ -150,10 +186,7 @@
 
         function displayTracks(tracks) {
           if (tracks.length === 0 && offset === 0) {
-            showMessage(
-              "Không tìm thấy bài hát nào có bản xem trước.",
-              "error"
-            );
+            showMessage("Không tìm thấy bài hát nào có bản xem trước.", "error");
             tracksList.style.display = "none";
             return;
           }
@@ -163,8 +196,7 @@
             listItem.className = "track-item";
 
             const albumImage = document.createElement("img");
-            albumImage.src =
-              track.album.images[0]?.url || "https://via.placeholder.com/60";
+            albumImage.src = track.album.images[0]?.url || "https://via.placeholder.com/60";
             albumImage.alt = track.name;
             albumImage.className = "track-image";
             listItem.appendChild(albumImage);
@@ -178,21 +210,11 @@
             trackName.className = "track-name";
             trackInfo.appendChild(trackName);
 
-            const artists = track.artists
-              .map((artist) => artist.name)
-              .join(", ");
+            const artists = track.artists.map((artist) => artist.name).join(", ");
             const trackArtists = document.createElement("div");
             trackArtists.textContent = artists;
             trackArtists.className = "track-artists";
             trackInfo.appendChild(trackArtists);
-
-            const addToPlaylistButton = document.createElement("button");
-            addToPlaylistButton.textContent = "Thêm vào Playlist";
-            addToPlaylistButton.className = "add-to-playlist-button";
-            addToPlaylistButton.addEventListener("click", () =>
-              addToPlaylist(track.id)
-            );
-            trackInfo.appendChild(addToPlaylistButton);
 
             listItem.appendChild(trackInfo);
             tracksList.appendChild(listItem);
@@ -201,84 +223,9 @@
           tracksList.style.display = "block";
         }
 
-        async function addToPlaylist(songId) {
-          try {
-            const userId = localStorage.getItem("userId");
-            if (!userId) {
-              showMessage("Không tìm thấy userId trong localStorage.", "error");
-              return;
-            }
-
-            // Lấy danh sách playlist của user từ API
-            const playlistApiUrl = `${playlistApiBaseUrl}?idUser=${userId}`;
-            const response = await fetch(playlistApiUrl);
-            if (!response.ok)
-              throw new Error("Không lấy được dữ liệu playlist.");
-
-            const playlistData = await response.json();
-
-            // Kiểm tra nếu không có playlist nào cho user, tạo playlist mới
-            if (playlistData.length === 0) {
-              // Tạo playlist mới với userId, idSong là một mảng rỗng
-              const newPlaylist = {
-                idUser: userId,
-                idSong: [songId], // Bắt đầu playlist với bài hát đã chọn
-              };
-
-              const createResponse = await fetch(playlistApiBaseUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(newPlaylist),
-              });
-
-              if (createResponse.ok) {
-                showMessage(
-                  "Playlist đã được tạo và bài hát được thêm vào.",
-                  "success"
-                );
-              } else {
-                throw new Error("Không tạo được Playlist mới.");
-              }
-            } else {
-              // Playlist đã tồn tại, kiểm tra bài hát đã có trong playlist chưa
-              const playlist = playlistData[0]; // Giả sử chỉ có một playlist cho mỗi user
-              if (playlist.idSong.includes(songId)) {
-                showMessage("Bài hát đã có trong Playlist.", "error");
-                return;
-              }
-
-              // Thêm bài hát vào danh sách idSong
-              playlist.idSong.push(songId);
-
-              // Cập nhật lại playlist với idSong mới
-              const updateResponse = await fetch(
-                `${playlistApiBaseUrl}/${playlist.id}`,
-                {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    idUser: playlist.idUser, // idUser
-                    idSong: playlist.idSong, // Cập nhật idSong
-                  }),
-                }
-              );
-
-              if (updateResponse.ok) {
-                showMessage("Bài hát đã được thêm vào Playlist.", "success");
-              } else {
-                throw new Error("Không cập nhật được Playlist.");
-              }
-            }
-          } catch (error) {
-            console.error("Lỗi khi thêm vào Playlist:", error);
-            showMessage("Đã xảy ra lỗi khi thêm vào Playlist.", "error");
-          }
-        }
-
         function showMessage(message, type) {
           messageDiv.textContent = message;
-          messageDiv.className =
-            type === "success" ? "success" : "error-message";
+          messageDiv.className = type === "success" ? "success" : "error-message";
           setTimeout(() => {
             messageDiv.textContent = "";
             messageDiv.className = "";
@@ -306,10 +253,8 @@
 
         window.addEventListener("scroll", () => {
           if (
-            window.innerHeight + window.scrollY >=
-              document.body.offsetHeight - 500 &&
-            !isLoading &&
-            hasMore
+            window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 &&
+            !isLoading && hasMore
           ) {
             loadMoreTracks();
           }
