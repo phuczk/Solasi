@@ -93,21 +93,18 @@
     </div>
 
     <script>
-      const apiUrl =
-        "https://65bf081adcfcce42a6f31afe.mockapi.io/phuczk/demo_crud_api142857/";
+      const apiUrl = "http://localhost:3000/v1";
 
       async function registerUser(username, password) {
         try {
-          const response = await fetch(apiUrl + "user", {
+          const response = await fetch(apiUrl + "/auth/register", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              userName: username,
+              username: username,
               password: password,
-              point: 0,
-              songHeard: 0,
             }),
           });
 
@@ -125,16 +122,23 @@
 
       async function loginUser(username, password) {
         try {
-          const response = await fetch(apiUrl + "user");
-          const users = await response.json();
+          const response = await fetch(apiUrl + "/auth/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              username: username,
+              password: password,
+            }),
+          });
 
-          const user = users.find(
-            (u) => u.userName === username && u.password === password
-          );
+          if (response.ok) {
+            const data = await response.json();
 
-          if (user) {
-            // Lưu ID người dùng vào localStorage
-            localStorage.setItem("userId", user.id);
+            // Lưu token người dùng vào localStorage
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("userId", data.userId);
 
             document.getElementById("loginMessage").textContent =
               "Đăng nhập thành công!";
@@ -142,12 +146,10 @@
               window.location.href = "../routes/home/index.html"; // Chuyển đến trang chi tiết
             }, 1500);
           } else {
-            document.getElementById("loginMessage").textContent =
-              "Tên đăng nhập hoặc mật khẩu không đúng.";
+            throw new Error("Tên đăng nhập hoặc mật khẩu không đúng.");
           }
         } catch (error) {
-          document.getElementById("loginMessage").textContent =
-            "Lỗi đăng nhập!";
+          document.getElementById("loginMessage").textContent = error.message;
         }
       }
 

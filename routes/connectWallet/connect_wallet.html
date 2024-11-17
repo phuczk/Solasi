@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kết Nối Ví Phantom</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f9f9f9;
+      }
+
+      h1 {
+        text-align: center;
+        color: #1db954;
+      }
+
+      .button {
+        display: block;
+        width: 200px;
+        margin: 20px auto;
+        padding: 15px;
+        background-color: #1db954;
+        color: white;
+        text-align: center;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+
+      .button:hover {
+        background-color: #16b335;
+      }
+
+      .message {
+        text-align: center;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Kết Nối Ví Phantom</h1>
+    <div id="connectWalletButton" class="button">Kết Nối Ví Phantom</div>
+    <div id="walletAddress" class="message"></div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const connectWalletButton = document.getElementById("connectWalletButton");
+        const walletAddressDiv = document.getElementById("walletAddress");
+
+        // Kiểm tra xem ví Phantom có được cài đặt không
+        function isPhantomInstalled() {
+          return window.solana && window.solana.isPhantom;
+        }
+
+        // Kiểm tra ví đã kết nối chưa
+        async function checkWalletConnection() {
+          if (isPhantomInstalled()) {
+            try {
+              const resp = await window.solana.connect({ onlyIfTrusted: true });
+              const publicKey = resp.publicKey.toString();
+              walletAddressDiv.textContent = `Địa chỉ ví: ${publicKey}`;
+            } catch (error) {
+              console.warn("Chưa kết nối ví:", error);
+            }
+          }
+        }
+
+        // Kết nối ví Phantom
+        async function connectWallet() {
+          if (!isPhantomInstalled()) {
+            alert("Phantom Wallet chưa được cài đặt. Vui lòng cài đặt Phantom từ trang chủ.");
+            window.open("https://phantom.app/", "_blank");
+            return;
+          }
+
+          try {
+            const resp = await window.solana.connect();
+            const publicKey = resp.publicKey.toString();
+            walletAddressDiv.textContent = `Địa chỉ ví: ${publicKey}`;
+            console.log("Connected with public key:", publicKey);
+
+            // Gọi API để lưu publicKey vào người dùng
+            savePublicKey(publicKey);
+          } catch (error) {
+            console.error("Kết nối ví thất bại:", error);
+            walletAddressDiv.textContent = "Kết nối ví thất bại. Vui lòng thử lại.";
+          }
+        }
+
+        // Hàm gọi API lưu publicKey
+        async function savePublicKey(publicKey) {
+          const token = localStorage.getItem("token"); // Giả sử bạn đã lưu token vào localStorage sau khi người dùng đăng nhập
+
+          if (!token) {
+            alert("Vui lòng đăng nhập trước khi kết nối ví.");
+            return;
+          }
+
+          try {
+            const response = await fetch("http://localhost:3000/v1/auth/update-public-key", {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+              },
+              body: JSON.stringify({ publicKey })
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              console.log("Public key updated successfully:", data);
+              walletAddressDiv.textContent += "\nPublic key đã được lưu thành công!";
+
+              // Điều hướng về trang chủ sau khi lưu thành công
+              setTimeout(() => {
+                window.location.href = "../home/index.html"; // Thay "index.html" bằng URL của trang chủ của bạn
+              }, 2000); // Delay 2 giây để người dùng thấy thông báo trước khi chuyển
+            } else {
+              const error = await response.json();
+              console.error("Error updating public key:", error.message);
+              walletAddressDiv.textContent += "\nLưu public key thất bại.";
+            }
+          } catch (error) {
+            console.error("Error saving public key:", error);
+            walletAddressDiv.textContent += "\nLưu public key thất bại.";
+          }
+        }
+
+        // Thêm sự kiện click để kết nối ví
+        connectWalletButton.addEventListener("click", connectWallet);
+
+        // Kiểm tra trạng thái kết nối khi tải trang
+        checkWalletConnection();
+      });
+    </script>
+  </body>
+</html>

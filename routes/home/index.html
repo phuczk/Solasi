@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <title>Danh Sách Bài Hát Spotify</title>
     <link rel="stylesheet" href="style_index.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
   </head>
 
   <body>
@@ -36,6 +37,18 @@
       >Xem Playlist</a
     >
 
+    <!-- Nút kết nối ví Phantom -->
+    <a
+      href="../connectWallet/connect_wallet.html"
+      id="connectWalletButton"
+      style="display: block; text-align: center; margin: 20px 0; color: #1db954"
+    >
+      Kết Nối Ví Phantom
+    </a>
+
+    <!-- Số dư ví -->
+    <div id="walletBalance" class="wallet-balance" style="text-align: center; margin: 20px 0; color: #1db954"></div>
+
     <!-- Danh sách bài hát -->
     <ul id="tracksList" class="tracks-list" style="display: none"></ul>
 
@@ -47,12 +60,14 @@
         const tokenUrl = "https://accounts.spotify.com/api/token";
         const playlistApiBaseUrl =
           "https://65bf081adcfcce42a6f31afe.mockapi.io/phuczk/demo_crud_api142857/playList";
+        const getUserPublicKeyUrl = "http://localhost:3000/v1/auth/get_user_infor";
 
         const statusDiv = document.getElementById("status");
         const messageDiv = document.getElementById("message");
         const tracksList = document.getElementById("tracksList");
         const searchButton = document.getElementById("searchButton");
         const searchQueryInput = document.getElementById("searchQuery");
+        const walletBalanceDiv = document.getElementById("walletBalance");
 
         let accessToken = "";
         let currentQuery = "";
@@ -93,6 +108,58 @@
           } catch (error) {
             console.error("Error fetching access token:", error);
             showMessage("Đã xảy ra lỗi khi lấy Access Token.", "error");
+          }
+        }
+
+        async function getUserPublicKey() {
+          const token = localStorage.getItem("token");
+          if (!token) {
+            walletBalanceDiv.textContent = "Vui lòng đăng nhập để kết nối ví.";
+            return;
+          }
+
+          try {
+            const response = await fetch(getUserPublicKeyUrl, {
+              method: "GET",
+              headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              const publicKey = data.publicKey;
+              if (publicKey) {
+                getWalletBalance(publicKey);
+              } else {
+                walletBalanceDiv.textContent = "Không tìm thấy public key.";
+              }
+            } else {
+              throw new Error("Failed to get public key from server");
+            }
+          } catch (error) {
+            console.error("Error fetching public key:", error);
+            walletBalanceDiv.textContent = "Không thể lấy public key.";
+          }
+        }
+
+        async function getWalletBalance(publicKey) {
+          try {
+            // Kết nối với Solana Devnet
+            const connection = new solanaWeb3.Connection(
+              solanaWeb3.clusterApiUrl("devnet"),
+              "confirmed"
+            );
+
+            // Lấy số dư của địa chỉ ví
+            const balance = await connection.getBalance(new solanaWeb3.PublicKey(publicKey));
+            const balanceInSOL = balance / solanaWeb3.LAMPORTS_PER_SOL;
+
+            walletBalanceDiv.textContent = `Số dư ví: ${balanceInSOL} SOL`;
+          } catch (error) {
+            console.error("Lỗi khi lấy số dư ví:", error);
+            walletBalanceDiv.textContent = "Không thể lấy số dư ví.";
           }
         }
 
@@ -201,80 +268,6 @@
           tracksList.style.display = "block";
         }
 
-        async function addToPlaylist(songId) {
-          try {
-            const userId = localStorage.getItem("userId");
-            if (!userId) {
-              showMessage("Không tìm thấy userId trong localStorage.", "error");
-              return;
-            }
-
-            // Lấy danh sách playlist của user từ API
-            const playlistApiUrl = `${playlistApiBaseUrl}?idUser=${userId}`;
-            const response = await fetch(playlistApiUrl);
-            if (!response.ok)
-              throw new Error("Không lấy được dữ liệu playlist.");
-
-            const playlistData = await response.json();
-
-            // Kiểm tra nếu không có playlist nào cho user, tạo playlist mới
-            if (playlistData.length === 0) {
-              // Tạo playlist mới với userId, idSong là một mảng rỗng
-              const newPlaylist = {
-                idUser: userId,
-                idSong: [songId], // Bắt đầu playlist với bài hát đã chọn
-              };
-
-              const createResponse = await fetch(playlistApiBaseUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(newPlaylist),
-              });
-
-              if (createResponse.ok) {
-                showMessage(
-                  "Playlist đã được tạo và bài hát được thêm vào.",
-                  "success"
-                );
-              } else {
-                throw new Error("Không tạo được Playlist mới.");
-              }
-            } else {
-              // Playlist đã tồn tại, kiểm tra bài hát đã có trong playlist chưa
-              const playlist = playlistData[0]; // Giả sử chỉ có một playlist cho mỗi user
-              if (playlist.idSong.includes(songId)) {
-                showMessage("Bài hát đã có trong Playlist.", "error");
-                return;
-              }
-
-              // Thêm bài hát vào danh sách idSong
-              playlist.idSong.push(songId);
-
-              // Cập nhật lại playlist với idSong mới
-              const updateResponse = await fetch(
-                `${playlistApiBaseUrl}/${playlist.id}`,
-                {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    idUser: playlist.idUser, // idUser
-                    idSong: playlist.idSong, // Cập nhật idSong
-                  }),
-                }
-              );
-
-              if (updateResponse.ok) {
-                showMessage("Bài hát đã được thêm vào Playlist.", "success");
-              } else {
-                throw new Error("Không cập nhật được Playlist.");
-              }
-            }
-          } catch (error) {
-            console.error("Lỗi khi thêm vào Playlist:", error);
-            showMessage("Đã xảy ra lỗi khi thêm vào Playlist.", "error");
-          }
-        }
-
         function showMessage(message, type) {
           messageDiv.textContent = message;
           messageDiv.className =
@@ -324,6 +317,8 @@
           }
         }
 
+        // Lấy publicKey từ server nếu có và hiển thị số dư
+        getUserPublicKey();
         getAccessToken();
       });
     </script>
