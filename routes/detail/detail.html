@@ -29,7 +29,9 @@
 
         // Lấy ID người dùng từ localStorage
         const userId = localStorage.getItem("userId");
+        const getUserPublicKeyUrl = "http://localhost:3000/v1/auth/get_user_infor";
         const userApiUrl = `https://65bf081adcfcce42a6f31afe.mockapi.io/phuczk/demo_crud_api142857/user/${userId}`;
+        const userUpdate = 'http://localhost:3000/v1/auth/update'
 
         const statusDiv = document.getElementById("status");
         const messageDiv = document.getElementById("message");
@@ -158,8 +160,16 @@
 
         async function completeListening() {
           try {
+
+            const token = localStorage.getItem("token");
             // Lấy dữ liệu người dùng hiện tại từ API
-            const response = await fetch(userApiUrl);
+            const response = await fetch(getUserPublicKeyUrl, {
+              method: "GET",
+              headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
             if (!response.ok)
               throw new Error("Không lấy được dữ liệu người dùng.");
             const userData = await response.json();
@@ -171,9 +181,10 @@
             };
 
             // Gửi yêu cầu PUT để cập nhật
-            const updateResponse = await fetch(userApiUrl, {
+            const updateResponse = await fetch(userUpdate, {
               method: "PUT",
               headers: {
+                "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
               body: JSON.stringify(updatedData),
