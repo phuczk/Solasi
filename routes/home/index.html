@@ -1,276 +1,288 @@
 <!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danh Sách Bài Hát Spotify</title>
-    <link rel="stylesheet" href="style_index.css" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-
-  </head>
-
-  <body>
-    
-    <div class="sidebar">
-      <h2>📖 Solasi </h2>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Danh Sách Bài Hát Spotify</title>
+  <link rel="stylesheet" href="style_index.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+</head>
+<body>
+  <div class="container">
+   
+   
+    <div class="menu">
+      <h2><i class="fa-solid fa-music"></i> Menu</h2>
       <ul>
-          <li><a href="../daily_task/daily_task.html" title="Nhiệm Vụ Hàng Ngày">📅 Nhiệm Vụ Hàng Ngày</a></li>
-          <li><a href="../play_list/playlist.html" title="Xem Playlist">🎵 Xem Playlist</a></li>
+        
+        <li><a href="../daily_task/daily_task.html"><i class="fa-solid fa-house"></i> Xem Nhiệm Vụ Hàng Ngày</a></li>
+        <li><a href="../play_list/playlist.html"><i class="fa-solid fa-search"></i> Xem Playlist</a></li>
+        <li><a href="../connectWallet/connect_wallet.html"><i class="fa-solid fa-heart"></i> Kết Nối Ví Phantom</a></li>
+        
+        <li><a href="#"><i class="fa-solid fa-user"></i> Tài Khoản</a></li>
       </ul>
-  </div>
-  
-  
-  
-
-    <!-- Nội dung chính bên phải -->
-    <div class="main-content">
-      
-
-
-      <div class="banner-container">
-        <div class="banner-slide" id="banner1">
-          <img src="https://www.shutterstock.com/shutterstock/photos/1597115659/display_1500/stock-vector-music-festival-banner-background-template-with-colorful-trend-colors-poster-for-print-material-1597115659.jpg" alt="Banner 1">
-        </div>
-        <div class="banner-slide" id="banner2">
-          <img src="https://thietkewebchuyen.com/wp-content/uploads/thiet-ke-banner-website-anh-bia-Facebook-am-nhac-1.jpg" alt="Banner 2">
-        </div>
-        <div class="banner-slide" id="banner3">
-          <img src="https://thietkewebchuyen.com/wp-content/uploads/thiet-ke-banner-website-anh-bia-Facebook-am-nhac-4.jpg" alt="Banner 3">
-        </div>
-      </div>
-
-      
-      
-      <div class="search-container">
-        <div class="search-bar">
-          <input 
-            type="text" 
-            placeholder="Tìm kiếm bài hát, nghệ sĩ, album..." 
-            class="search-input" 
-            id="searchQuery"
-          />
-          <button id="searchButton" class="search-btn">
-            <i class="fas fa-search"></i>
-          </button>
-        </div>
-      </div>
-      
-
-      
-
-      <!-- Form tìm kiếm bài hát
-      <div class="search-form">
-        <input
-          type="text"
-          id="searchQuery"
-          placeholder="Nhập từ khóa tìm kiếm..."
-          required
-        />
-        <button id="searchButton">Tìm Kiếm</button>
-      </div> -->
-
-      <!-- Thông báo trạng thái -->
-      <div id="status" class="loading">Đang tải dữ liệu...</div>
-      <div id="message">
-        
-      </div>
-
-      <!-- Danh sách bài hát -->
-      <div class="track-list-container">
-        <ul id="tracksList" class="tracks-list" style="display: none"></ul>
-      </div>
     </div>
+    
+    
+    <div class="content">
+      <h1>Danh Sách Bài Hát Spotify</h1>
 
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const clientId = "7edacf5546fa4bb58e20f54e69e47079";
-        const clientSecret = "e538099ccc6b4da38cf1723b74542411";
-        const apiUrl = "https://api.spotify.com/v1/search";
-        const tokenUrl = "https://accounts.spotify.com/api/token";
-        
-        const statusDiv = document.getElementById("status");
-        const messageDiv = document.getElementById("message");
-        const tracksList = document.getElementById("tracksList");
-        const searchButton = document.getElementById("searchButton");
-        const searchQueryInput = document.getElementById("searchQuery");
+     
+      <div class="search-form">
+        <input type="text" id="searchQuery" placeholder="Nhập từ khóa tìm kiếm..." required />
+        <button id="searchButton">Tìm Kiếm</button>
+      </div>
 
-        let accessToken = "";
-        let currentQuery = "";
-        let offset = 0;
-        const limit = 20;
-        let isLoading = false;
-        let hasMore = true;
+      
+      <div id="status" class="loading">Đang tải dữ liệu...</div>
+      <div id="message"></div>
 
-        async function getAccessToken() {
-          const credentials = `${clientId}:${clientSecret}`;
-          const encodedCredentials = btoa(credentials);
+      
+      <div id="walletBalance" class="wallet-balance"></div>
 
-          try {
-            const response = await fetch(tokenUrl, {
-              method: "POST",
-              headers: {
-                Authorization: `Basic ${encodedCredentials}`,
-                "Content-Type": "application/x-www-form-urlencoded",
-              },
-              body: "grant_type=client_credentials",
-            });
+     
+      <ul id="tracksList" class="tracks-list"></ul>
+    </div>
+  </div>
 
-            if (response.ok) {
-              const data = await response.json();
-              accessToken = data.access_token;
-              console.log("Access Token:", accessToken);
-              if (currentQuery === "") {
-                loadMoreTracks();
-              }
-            } else {
-              const errorData = await response.json();
-              throw new Error(
-                `Failed to get access token: ${response.status} - ${
-                  errorData.error_description || response.statusText
-                }`
-              );
-            }
-          } catch (error) {
-            console.error("Error fetching access token:", error);
-            showMessage("Đã xảy ra lỗi khi lấy Access Token.", "error");
-          }
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const clientId = "7edacf5546fa4bb58e20f54e69e47079";
+      const clientSecret = "e538099ccc6b4da38cf1723b74542411";
+      const apiUrl = "https://api.spotify.com/v1/search";
+      const tokenUrl = "https://accounts.spotify.com/api/token";
+      const getUserPublicKeyUrl = "http://localhost:3000/v1/auth/get_user_infor";
+
+      const statusDiv = document.getElementById("status");
+      const messageDiv = document.getElementById("message");
+      const tracksList = document.getElementById("tracksList");
+      const searchButton = document.getElementById("searchButton");
+      const searchQueryInput = document.getElementById("searchQuery");
+      const walletBalanceDiv = document.getElementById("walletBalance");
+
+      let accessToken = "";
+      let currentQuery = "";
+      let offset = 0;
+      const limit = 20;
+      let isLoading = false;
+      let hasMore = true;
+
+      // Lấy access token từ Spotify API
+      async function getAccessToken() {
+  const credentials = `${clientId}:${clientSecret}`;
+  const encodedCredentials = btoa(credentials);
+
+  try {
+    const response = await fetch(tokenUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${encodedCredentials}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: "grant_type=client_credentials",
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+
+      accessToken = data.access_token;
+      
+      // Gọi tìm kiếm mặc định sau khi lấy token thành công
+      searchTracks("top hits");  
+    } else {
+      throw new Error("Không thể lấy Access Token.");
+    }
+  } catch (error) {
+    console.error("Error fetching access token:", error);
+    showMessage("Đã xảy ra lỗi khi lấy Access Token.", "error");
+  }
+}
+
+
+      // Lấy public key từ server
+      async function getUserPublicKey() {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          walletBalanceDiv.textContent = "Vui lòng đăng nhập để kết nối ví.";
+          return;
         }
 
-        async function searchTracks(query, newSearch = true) {
-          if (!accessToken) {
-            showMessage("Access Token không hợp lệ.", "error");
-            return;
-          }
-
-          if (newSearch) {
-            offset = 0;
-            hasMore = true;
-            tracksList.innerHTML = "";
-          }
-
-          if (!hasMore) return;
-
-          isLoading = true;
-          showLoading(true);
-
-          try {
-            const response = await fetch(
-              `${apiUrl}?q=${encodeURIComponent(query)}&type=track&limit=${limit}&offset=${offset}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                },
-              }
-            );
-
-            if (response.ok) {
-              const data = await response.json();
-              const tracks = data.tracks.items.filter((track) => track.preview_url);
-              displayTracks(tracks);
-              offset += limit;
-              hasMore = tracks.length === limit;
-            } else {
-              const errorData = await response.json();
-              throw new Error(
-                `Failed to fetch tracks: ${response.status} - ${errorData.error.message}`
-              );
-            }
-          } catch (error) {
-            console.error("Error fetching tracks:", error);
-            showMessage("Đã xảy ra lỗi khi tải danh sách bài hát.", "error");
-          } finally {
-            isLoading = false;
-            showLoading(false);
-          }
-        }
-
-        function displayTracks(tracks) {
-          if (tracks.length === 0 && offset === 0) {
-            showMessage("Không tìm thấy bài hát nào có bản xem trước.", "error");
-            tracksList.style.display = "none";
-            return;
-          }
-
-          tracks.forEach((track) => {
-            const listItem = document.createElement("li");
-            listItem.className = "track-item";
-
-            const albumImage = document.createElement("img");
-            albumImage.src = track.album.images[0]?.url || "https://via.placeholder.com/60";
-            albumImage.alt = track.name;
-            albumImage.className = "track-image";
-            listItem.appendChild(albumImage);
-
-            const trackInfo = document.createElement("div");
-            trackInfo.className = "track-info";
-
-            const trackName = document.createElement("a");
-            trackName.href = `../detail/detail.html?id=${track.id}`;
-            trackName.textContent = track.name;
-            trackName.className = "track-name";
-            trackInfo.appendChild(trackName);
-
-            const artists = track.artists.map((artist) => artist.name).join(", ");
-            const trackArtists = document.createElement("div");
-            trackArtists.textContent = artists;
-            trackArtists.className = "track-artists";
-            trackInfo.appendChild(trackArtists);
-
-            listItem.appendChild(trackInfo);
-            tracksList.appendChild(listItem);
+        try {
+          const response = await fetch(getUserPublicKeyUrl, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           });
 
-          tracksList.style.display = "block";
-        }
-
-        function showMessage(message, type) {
-          messageDiv.textContent = message;
-          messageDiv.className = type === "success" ? "success" : "error-message";
-          setTimeout(() => {
-            messageDiv.textContent = "";
-            messageDiv.className = "";
-          }, 5000);
-        }
-
-        function showLoading(show) {
-          statusDiv.style.display = show ? "block" : "none";
-        }
-
-        searchButton.addEventListener("click", async () => {
-          const query = searchQueryInput.value.trim();
-          if (query === "") {
-            showMessage("Vui lòng nhập từ khóa tìm kiếm.", "error");
-            return;
+          if (response.ok) {
+            const data = await response.json();
+            const publicKey = data.publicKey;
+            if (publicKey) {
+              getWalletBalance(publicKey);
+            } else {
+              walletBalanceDiv.textContent = "Không tìm thấy public key.";
+            }
+          } else {
+            throw new Error("Failed to get public key from server");
           }
+        } catch (error) {
+          console.error("Error fetching public key:", error);
+          walletBalanceDiv.textContent = "Không thể lấy public key.";
+        }
+      }
 
-          currentQuery = query;
+      // Lấy số dư ví từ Solana blockchain
+      async function getWalletBalance(publicKey) {
+        try {
+          const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("devnet"), "confirmed");
+          const balance = await connection.getBalance(new solanaWeb3.PublicKey(publicKey));
+          const balanceInSOL = balance / solanaWeb3.LAMPORTS_PER_SOL;
+          walletBalanceDiv.textContent = `Số dư ví: ${balanceInSOL} SOL`;
+        } catch (error) {
+          console.error("Lỗi khi lấy số dư ví:", error);
+          walletBalanceDiv.textContent = "Không thể lấy số dư ví.";
+        }
+      }
+
+      // Tìm kiếm bài hát
+      async function searchTracks(query, newSearch = true) {
+        if (!accessToken) {
+          showMessage("Access Token không hợp lệ.", "error");
+          return;
+        }
+
+        if (newSearch) {
           offset = 0;
           hasMore = true;
           tracksList.innerHTML = "";
-          showMessage("", "");
-          searchTracks(query, true);
-        });
-
-        window.addEventListener("scroll", () => {
-          if (
-            window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 &&
-            !isLoading && hasMore
-          ) {
-            loadMoreTracks();
-          }
-        });
-
-        function loadMoreTracks() {
-          if (currentQuery === "") {
-            const defaultQuery = "hay trao cho anh";
-            searchTracks(defaultQuery, false);
-          } else {
-            searchTracks(currentQuery, false);
-          }
         }
 
-        getAccessToken();
+        if (!hasMore) return;
+
+        isLoading = true;
+        showLoading(true);
+
+        try {
+          const response = await fetch(
+            `${apiUrl}?q=${encodeURIComponent(query)}&type=track&limit=${limit}&offset=${offset}`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+
+            const tracks = data.tracks.items.filter((track) => track.preview_url);
+            displayTracks(tracks);
+            offset += limit;
+            hasMore = tracks.length === limit;
+          } else {
+            throw new Error("Failed to fetch tracks.");
+          }
+        } catch (error) {
+          console.error("Error fetching tracks:", error);
+          showMessage("Đã xảy ra lỗi khi tải danh sách bài hát.", "error");
+        } finally {
+          isLoading = false;
+          showLoading(false);
+        }
+      }
+
+      // Hiển thị danh sách bài hát
+      function displayTracks(tracks) {
+        if (tracks.length === 0 && offset === 0) {
+          showMessage("Không tìm thấy bài hát nào có bản xem trước.", "error");
+          tracksList.style.display = "none";
+          return;
+        }
+
+        tracks.forEach((track) => {
+          const listItem = document.createElement("li");
+          listItem.className = "track-item";
+
+          const albumImage = document.createElement("img");
+          albumImage.src = track.album.images[0]?.url || "https://via.placeholder.com/60";
+          albumImage.alt = track.name;
+          albumImage.className = "track-image";
+          listItem.appendChild(albumImage);
+
+          const trackInfo = document.createElement("div");
+          trackInfo.className = "track-info";
+
+          const trackName = document.createElement("a");
+          trackName.href = `../detail/detail.html?id=${track.id}`;
+          trackName.textContent = track.name;
+          trackName.className = "track-name";
+          trackInfo.appendChild(trackName);
+
+          const artists = track.artists.map((artist) => artist.name).join(", ");
+          const trackArtists = document.createElement("div");
+          trackArtists.textContent = artists;
+          trackArtists.className = "track-artists";
+          trackInfo.appendChild(trackArtists);
+
+          const addToPlaylistButton = document.createElement("button");
+          addToPlaylistButton.textContent = "Thêm vào Playlist";
+          addToPlaylistButton.className = "add-to-playlist-button";
+          addToPlaylistButton.addEventListener("click", () => addToPlaylist(track.id));
+          trackInfo.appendChild(addToPlaylistButton);
+
+          listItem.appendChild(trackInfo);
+          tracksList.appendChild(listItem);
+        });
+
+        tracksList.style.display = "block";
+      }
+
+      // Hiển thị thông báo
+      function showMessage(message, type) {
+        messageDiv.textContent = message;
+        messageDiv.className = type === "success" ? "success" : "error-message";
+        setTimeout(() => {
+          messageDiv.textContent = "";
+          messageDiv.className = "";
+        }, 5000);
+      }
+
+      // Hiển thị trạng thái tải
+      function showLoading(show) {
+        statusDiv.style.display = show ? "block" : "none";
+      }
+
+      // Tìm kiếm bài hát khi nhấn nút tìm kiếm
+
+      searchButton.addEventListener("click", async () => {
+        const query = searchQueryInput.value.trim();
+        if (query === "") {
+          showMessage("Vui lòng nhập từ khóa tìm kiếm.", "error");
+          return;
+        }
+        currentQuery = query;
+        await searchTracks(query);
       });
-    </script>
-  </body>
+
+      // Kéo để tải thêm
+      tracksList.addEventListener("scroll", () => {
+        if (tracksList.scrollTop + tracksList.clientHeight >= tracksList.scrollHeight && !isLoading) {
+          searchTracks(currentQuery, false);
+        }
+      });
+
+      // Khởi tạo khi tải trang
+      getAccessToken();
+      getUserPublicKey();
+    });
+
+
+  </script>
+
+  
+</body>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </html>

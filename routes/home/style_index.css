@@ -1,351 +1,214 @@
-/* Reset mặc định */
-* {
+body {
+  font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+  background-color: #f5f5f5;
 }
 
-body {
+.container {
   display: flex;
-  font-family: Arial, sans-serif;
-  overflow: hidden; /* Ẩn cuộn toàn bộ trang, chỉ cuộn nội dung chính */
 }
 
-/* Sidebar cố định */
-.sidebar {
+.menu {
+  width: 220px;
   position: fixed;
   top: 0;
   left: 0;
-  width: 200px;
-  height: 100vh; /* Chiếm toàn bộ chiều cao cửa sổ */
-  background-color: #f4f4f4;
-  padding: 20px;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-  overflow-y: auto; /* Cuộn riêng nếu menu quá dài */
-}
-
-.sidebar h2 {
-  display: flex;
-  align-items: center;
-  font-size: 20px;
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.sidebar h2 i {
-  margin-right: 10px; /* Khoảng cách giữa icon và chữ */
-  color: #3498db; /* Màu icon */
-}
-
-.sidebar ul {
-  list-style: none;
-}
-
-.sidebar ul li {
-  margin-bottom: 10px;
-}
-
-.sidebar ul li a {
-  text-decoration: none;
-  font-size: 16px;
-  color: #333;
-  display: flex;
-  align-items: center;
-  transition: color 0.3s ease;
-}
-
-.sidebar ul li a i {
-  margin-right: 8px; /* Khoảng cách giữa icon và chữ trong menu */
-  color: #333;
-}
-
-.sidebar ul li a:hover,
-.sidebar ul li a:hover i {
-  color: #3498db; /* Đổi màu khi hover */
-}
-
-/* Main content */
-.main-content {
-  margin-left: 200px; /* Đẩy nội dung sang bên phải */
-  width: calc(100% - 100px);
+  height: 100vh;
+  background-color: #008800;
+  padding: 10px 15px;
+  color: white;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Chiếm toàn bộ chiều cao cửa sổ */
 }
 
-/* Header cố định */
-.header {
-  position: fixed;
-  top: 5px;
-  left: 10px;
-  width: calc(100% - 100px); /* Trừ chiều rộng sidebar */
-  background-color: #fff;
-  padding: 10px 0px;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-}
-
-.header h1 {
+.menu h2 {
+  text-align: center;
   font-size: 24px;
-  color: #333;
+  margin-bottom: 20px; 
+  color: #00DD00;
 }
 
-/* Nội dung cuộn */
-.track-list-container {
-  margin-top: 10px; /* Đẩy xuống dưới header */
-  height: calc(100vh - 100px); /* Chiều cao còn lại */
-  overflow-y: auto; /* Cuộn dọc */
-  overflow-x: auto; /* Cuộn ngang */
+.menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0; 
+  flex-grow: 1; 
+}
+
+.menu ul li {
+  margin: 10px 0; 
+}
+
+.menu ul li a {
+  color: white;
+  text-decoration: none;
+  font-size: 18px;
   padding: 10px;
-  background-color: #f9f9f9;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-/* Danh sách bài hát theo dạng lưới */
-/* Danh sách bài hát theo dạng lưới */
+.menu ul li a i {
+  margin-right: 15px; 
+  font-size: 20px; 
+}
+
+.menu ul li a:hover {
+  background-color: #1db954;
+  transform: translateX(8px); 
+}
+
+.content {
+  margin-left: 220px; 
+  padding: 20px;
+  width: calc(100% - 220px);
+}
+
+h1 {
+  color: #1db954;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.search-form {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #ffffff;
+  border-radius: 50px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  padding: 12px 20px;
+  width: 100%;
+  max-width: 600px;
+  transition: all 0.3s ease-in-out;
+  
+  justify-self: center;
+}
+.search-form:hover {
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+.search-form input {
+  padding: 10px;
+  width: 80%;
+  max-width: 400px;
+  margin-right: 10px;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+}
+
+.search-form button {
+  padding: 12px 24px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: 10px;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.search-form button:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+}
 
 
+.search-form button:active {
+  transform: translateY(2px);
+}
 
 
 .tracks-list {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr); 
-  gap: 10px; 
-  list-style: none;
+  list-style-type: none;
   padding: 0;
-  margin: 0;
+  margin: 20px 0;
+  max-height: 500px;
+  overflow-y: auto;
 }
-
 
 .track-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  text-align: center;
-  background: #fff;
+  background-color: #ffffff;
+  margin-bottom: 15px;
   padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
+  border-radius: 15px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .track-item:hover {
-  transform: scale(1.05);
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
 }
 
 .track-image {
-  width: 120px;
-  height: auto;
-  max-width: 150px;
+  width: 80px;
+  height: 80px;
   border-radius: 10px;
-  margin-bottom: 10px;
+  margin-right: 20px;
+  object-fit: cover;
 }
 
 .track-info {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
 .track-name {
-  font-size: 16px;
-  color: #3498db;
-  text-decoration: none;
+  font-size: 20px;
   font-weight: bold;
-  word-break: break-word;
+  color: #1db954;
+  text-decoration: none;
+  transition: color 0.3s ease;
 }
 
 .track-name:hover {
+  color: #14833b;
   text-decoration: underline;
 }
 
 .track-artists {
-  font-size: 14px;
-  color: #666;
-}
-
-/* Container tìm kiếm */
-.search-container {
-  width: 70%;
-  padding: 20px;
-  background-color: #f9f9f9;
-  position: relative;
-  align-self: center;
-  z-index: 10;
-}
-
-/* Thanh tìm kiếm */
-.search-bar {
-  display: flex;
-  align-items: center;
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 50px;
-  padding: 10px 20px;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-  position: relative;
-  transition: all 0.3s ease;
-  margin-bottom: 20px; /* Giảm khoảng cách giữa thanh tìm kiếm và danh sách bài hát */
-}
-
-.search-bar:focus-within {
-  border-color: #3498db;
-  box-shadow: 0px 4px 10px rgba(52, 152, 219, 0.2);
-}
-
-/* Ô input */
-.search-input {
-  flex: 1;
-  border: none;
-  outline: none;
   font-size: 16px;
-  color: #333;
+  color: #666;
+  margin-top: 5px;
 }
 
-.search-input::placeholder {
-  color: #aaa;
+.add-to-playlist-button { padding: 8px 15px;
+  background-color: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 20px;
   font-size: 14px;
-}
-
-/* Icon tìm kiếm */
-.search-icon {
-  font-size: 30px;
-  color: #aaa;
-  margin-left: 10px;
-  transition: color 0.3s ease;
-}
-
-.search-bar:focus-within .search-icon {
-  color: #3498db;
-}
-
-/* Kết quả tìm kiếm */
-.search-results {
-  margin-top: 20px;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-  padding: 15px;
-  display: none; /* Ban đầu ẩn, hiển thị khi có nội dung */
-}
-
-.search-results.active {
-  display: block; /* Hiển thị kết quả */
-}
-
-/* Placeholder khi chưa nhập */
-.search-placeholder {
-  font-size: 14px;
-  color: #aaa;
-  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  align-self: flex-start;
   margin-top: 10px;
 }
 
-/* Danh sách kết quả */
-.results-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.add-to-playlist-button:hover {
+  background-color: #d95b5b;
+  transform: scale(1.05);
 }
 
-.result-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-  padding: 10px;
-  border-radius: 8px;
-  /* transition: background 0.3s ease; */
-}
 
-.result-item:hover {
-  background: #f1f1f1;
-}
-
-/* Hình ảnh kết quả */
-.result-image {
-  width: 50px;
-  height: 50px;
-  border-radius: 5px;
-  object-fit: cover;
-  margin-right: 15px;
-}
-
-/* Thông tin bài hát */
-.result-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.result-name {
-  font-size: 16px;
-  font-weight: bold;
-  color: #3498db;
-  text-decoration: none;
-  margin-bottom: 5px;
-}
-
-.result-name:hover {
-  text-decoration: underline;
-}
-
-.result-artist {
-  font-size: 14px;
-  color: #666;
-}
-
-/* Thông báo trạng thái */
-#status {
-  font-size: 14px;
-  color: #ffffff;
-  background-color: #333333;
-  padding: 8px 16px;
-  border-radius: 4px;
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: none; /* Mặc định ẩn đi */
-  z-index: 1000;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+.wallet-balance {
+  text-align: center;
+  margin: 20px 0;
+  color: #1db954;
 }
 
 .loading {
-  background-color: #ffa500; /* Màu cam cho thông báo loading */
+  text-align: center;
+  color: #555;
 }
 
-.error {
-  background-color: #f44336; /* Màu đỏ cho thông báo lỗi */
-}
-
-.success {
-  background-color: #4caf50; /* Màu xanh cho thông báo thành công */
-}
-
-
-
-
-/* Container chứa banner */
-.banner-container {
-  position: relative;
-  width: 100%;
-  height: 200px; /* Điều chỉnh chiều cao banner */
-  overflow: hidden;
-  padding: 5px;
-  border-radius: 10px;
-}
-
-.banner-slide {
-  position: absolute;
-  top: 0;
-  
-  width: 100%;
-  height: 100%;
-  transition: left 1s ease-in-out;
-}
-
-
-.banner-slide img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* Đảm bảo ảnh phủ đầy banner */
+.error-message {
+  color: red;
 }
