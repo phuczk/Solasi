@@ -2,7 +2,10 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f5f5f5;
+  background-color: #605c5b;
+  height: 100vh;
+  /* Đảm bảo body chiếm toàn bộ chiều cao màn hình */
+  overflow: hidden;
 }
 
 .container {
@@ -15,10 +18,10 @@ body {
   top: 0;
   left: 0;
   height: 100vh;
-  background-color: #008800;
+  background-color: #605c5b;
   padding: 10px 15px;
   color: white;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+
   display: flex;
   flex-direction: column;
 }
@@ -26,23 +29,23 @@ body {
 .menu h2 {
   text-align: center;
   font-size: 24px;
-  margin-bottom: 20px; 
-  color: #00DD00;
+  margin-bottom: 20px;
+  color: #fff;
 }
 
 .menu ul {
   list-style: none;
   padding: 0;
-  margin: 0; 
-  flex-grow: 1; 
+  margin: 0;
+  flex-grow: 1;
 }
 
 .menu ul li {
-  margin: 10px 0; 
+  margin: 10px 0;
 }
 
 .menu ul li a {
-  color: white;
+  color: #d6d2d3;
   text-decoration: none;
   font-size: 18px;
   padding: 10px;
@@ -53,18 +56,22 @@ body {
 }
 
 .menu ul li a i {
-  margin-right: 15px; 
-  font-size: 20px; 
+  margin-right: 15px;
+  font-size: 20px;
 }
 
 .menu ul li a:hover {
-  background-color: #1db954;
-  transform: translateX(8px); 
+  color: #e6e5be;
+  background-color: #3f3b3c;
+  transform: translateX(8px);
 }
 
 .content {
-  margin-left: 220px; 
-  padding: 20px;
+  background-color: #fff;
+  border-radius: 20px 0px 0px 20px;
+  box-shadow: #3f3b3c;
+  margin-left: 250px;
+  height: 100vh;
   width: calc(100% - 220px);
 }
 
@@ -74,7 +81,26 @@ h1 {
   margin-bottom: 20px;
 }
 
-.search-form {
+.track-name {
+  font-size: 20px;
+  font-weight: bold;
+  color: #1db954;
+  text-decoration: none;
+  transition: color 0.3s ease;
+
+  display: block;
+  /* Đảm bảo phần tử chiếm một dòng */
+  max-width: 600px;
+  /* Giới hạn độ dài tối đa (thay đổi giá trị này tùy thuộc vào độ dài mong muốn) */
+  overflow: hidden;
+  /* Ẩn phần thừa ra ngoài */
+  text-overflow: ellipsis;
+  /* Thêm dấu ba chấm nếu tên bài hát quá dài */
+  white-space: nowrap;
+  /* Ngăn không cho tên bài hát xuống dòng */
+}
+
+/* .search-form {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -85,19 +111,24 @@ h1 {
   width: 100%;
   max-width: 600px;
   transition: all 0.3s ease-in-out;
-  
+
   justify-self: center;
-}
-.search-form:hover {
+} */
+
+/* .search-form:hover {
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
-}
+} */
+
 .search-form input {
   padding: 10px;
   width: 80%;
-  max-width: 400px;
+  max-width: 700px;
+  height: 30px;
   margin-right: 10px;
-  border: 2px solid #ddd;
+  background-color: #ececec;
+  border: none;
   border-radius: 5px;
+  margin-left: 20px;
 }
 
 .search-form button {
@@ -117,6 +148,11 @@ h1 {
   transform: translateY(-2px);
 }
 
+.search-form input:hover {
+  background-color: #e2e2e2;
+  transform: translateY(-2px);
+}
+
 
 .search-form button:active {
   transform: translateY(2px);
@@ -126,19 +162,29 @@ h1 {
 .tracks-list {
   list-style-type: none;
   padding: 0;
-  margin: 20px 0;
   max-height: 500px;
   overflow-y: auto;
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+}
+
+.tracks-list::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Edge */
 }
 
 .track-item {
   display: flex;
   align-items: center;
   background-color: #ffffff;
-  margin-bottom: 15px;
   padding: 15px;
+  margin-right: 10px;
+  margin-left: 10px;
+  margin-top: 10px;
   border-radius: 15px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 8px 8px 16px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -180,7 +226,8 @@ h1 {
   margin-top: 5px;
 }
 
-.add-to-playlist-button {padding: 8px 15px;
+.add-to-playlist-button {
+  padding: 8px 15px;
   background-color: #ff6b6b;
   color: white;
   border: none;
