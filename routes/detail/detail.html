@@ -1,233 +1,184 @@
 <!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Chi Tiết Bài Hát</title>
-    <link rel="stylesheet" href="style_detail.css" />
-  </head>
 
-  <body>
-    <h1>Chi Tiết Bài Hát</h1>
-    <div id="trackDetail" class="track-detail">
-      <div id="status" class="loading">Đang tải dữ liệu...</div>
-      <div id="message" class="error-message"></div>
-      <img id="trackImage" class="track-image" src="" alt="" />
-      <div id="trackName" class="track-name"></div>
-      <div id="trackArtists" class="track-artists"></div>
-      <div id="trackAlbum" class="track-album"></div>
-      <div id="trackPreview" class="track-preview"></div>
-      <button id="playButton" class="play-button">Nghe Lại Bài Hát</button>
-      <button id="backButton" class="back-button">Quay Lại</button>
-    </div>
+<head>
+  <meta charset="UTF-8" />
+  <title>Chi Tiết Bài Hát</title>
+  <link rel="stylesheet" href="style_detail.css" />
+</head>
 
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const clientId = "7edacf5546fa4bb58e20f54e69e47079";
-        const clientSecret = "e538099ccc6b4da38cf1723b74542411";
-        const spotifyApiUrl = "https://api.spotify.com/v1/tracks/";
-        const tokenUrl = "https://accounts.spotify.com/api/token";
+<body>
+  <h1>Chi Tiết Bài Hát</h1>
+  <div id="trackDetail" class="track-detail">
+    <div id="status" class="loading">Đang tải dữ liệu...</div>
+    <div id="message" class="error-message"></div>
+    <img id="trackImage" class="track-image" src="" alt="" />
+    <div id="trackName" class="track-name"></div>
+    <div id="trackArtists" class="track-artists"></div>
+    <div id="trackAlbum" class="track-album"></div>
+    <div id="trackPreview" class="track-preview"></div>
+    <button id="playButton" class="play-button">Nghe Lại Bài Hát</button>
+    <button id="backButton" class="back-button">Quay Lại</button>
+  </div>
 
-        // Lấy ID người dùng từ localStorage
-        const userId = localStorage.getItem("userId");
-        const getUserPublicKeyUrl = "http://localhost:3000/v1/auth/get_user_infor";
-        const userApiUrl = `https://65bf081adcfcce42a6f31afe.mockapi.io/phuczk/demo_crud_api142857/user/${userId}`;
-        const userUpdate = 'http://localhost:3000/v1/auth/update'
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const deezerApiUrl = "https://deezerdevs-deezer.p.rapidapi.com/track/"; // Deezer API URL
+      const statusDiv = document.getElementById("status");
+      const messageDiv = document.getElementById("message");
+      const trackImage = document.getElementById("trackImage");
+      const trackName = document.getElementById("trackName");
+      const trackArtists = document.getElementById("trackArtists");
+      const trackAlbum = document.getElementById("trackAlbum");
+      const trackPreview = document.getElementById("trackPreview");
+      const playButton = document.getElementById("playButton");
+      const backButton = document.getElementById("backButton");
 
-        const statusDiv = document.getElementById("status");
-        const messageDiv = document.getElementById("message");
-        const trackImage = document.getElementById("trackImage");
-        const trackName = document.getElementById("trackName");
-        const trackArtists = document.getElementById("trackArtists");
-        const trackAlbum = document.getElementById("trackAlbum");
-        const trackPreview = document.getElementById("trackPreview");
-        const playButton = document.getElementById("playButton");
-        const backButton = document.getElementById("backButton");
+      let audio = null;
+      let listeningTime = 0;
+      const targetListeningTime = 25;
+      let isListening = false;
 
-        let accessToken = "";
-        let audio = null;
-        let listeningTime = 0;
-        const targetListeningTime = 25;
-        let isListening = false;
-
-        async function getAccessToken() {
-          const credentials = `${clientId}:${clientSecret}`;
-          const encodedCredentials = btoa(credentials);
-
-          try {
-            const response = await fetch(tokenUrl, {
-              method: "POST",
-              headers: {
-                Authorization: `Basic ${encodedCredentials}`,
-                "Content-Type": "application/x-www-form-urlencoded",
-              },
-              body: "grant_type=client_credentials",
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              accessToken = data.access_token;
-            } else {
-              throw new Error(`Failed to get access token: ${response.status}`);
-            }
-          } catch (error) {
-            console.error("Error fetching access token:", error);
-            showMessage("Đã xảy ra lỗi khi lấy Access Token.", "error");
+      async function getTrackDetail(trackId) {
+        const url = `${deezerApiUrl}${trackId}`;
+        const options = {
+          method: 'GET',
+          headers: {
+            'x-rapidapi-key': 'b2fd2ef69emsh1bb0c506a6e52d9p145a41jsna65651cd5d00',  // RapidAPI key
+            'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
           }
-        }
+        };
 
-        async function getTrackDetail(trackId) {
-          if (!accessToken) {
-            showMessage("Access Token không hợp lệ.", "error");
-            return;
-          }
+        try {
+          const response = await fetch(url, options);
+          const track = await response.json();
 
-          try {
-            const response = await fetch(`${spotifyApiUrl}${trackId}`, {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            });
-
-            if (response.ok) {
-              const track = await response.json();
-              displayTrackDetail(track);
-            } else {
-              throw new Error(
-                `Failed to fetch track detail: ${response.status}`
-              );
-            }
-          } catch (error) {
-            console.error("Error fetching track detail:", error);
-            showMessage("Đã xảy ra lỗi khi tải chi tiết bài hát.", "error");
-          }
-        }
-
-        function displayTrackDetail(track) {
-          statusDiv.style.display = "none";
-          trackImage.src = track.album.images[0]?.url || "placeholder.jpg";
-          trackName.textContent = track.name;
-          trackArtists.textContent = track.artists
-            .map((artist) => artist.name)
-            .join(", ");
-          trackAlbum.textContent = `Album: ${track.album.name}`;
-
-          if (track.preview_url) {
-            audio = new Audio(track.preview_url);
-            audio.controls = true;
-            trackPreview.appendChild(audio);
-
-            audio.addEventListener("play", () => {
-              if (!isListening) {
-                isListening = true;
-                startListening();
-              }
-            });
-
-            audio.addEventListener("pause", () => {
-              isListening = false;
-            });
-
-            audio.addEventListener("ended", () => {
-              isListening = false;
-            });
+          if (track) {
+            displayTrackDetail(track);
           } else {
-            trackPreview.textContent =
-              "Không có bản xem trước cho bài hát này.";
+            throw new Error("Không tìm thấy thông tin bài hát.");
           }
+        } catch (error) {
+          console.error("Lỗi khi lấy thông tin bài hát:", error);
+          showMessage("Đã xảy ra lỗi khi tải chi tiết bài hát.", "error");
+        }
+      }
 
-          playButton.addEventListener("click", () => {
-            if (audio) {
-              audio.currentTime = 0;
-              audio.play();
+      function displayTrackDetail(track) {
+        statusDiv.style.display = "none";
+        trackImage.src = track.album.cover_big || "placeholder.jpg";
+        trackName.textContent = track.title;
+        trackArtists.textContent = `Nghệ sĩ: ${track.artist.name}`;
+        trackAlbum.textContent = `Album: ${track.album.title}`;
+
+        if (track.preview) {
+          audio = new Audio(track.preview);
+          audio.controls = true;
+          trackPreview.appendChild(audio);
+
+          audio.addEventListener("play", () => {
+            if (!isListening) {
+              isListening = true;
+              startListening();
             }
           });
+
+          audio.addEventListener("pause", () => {
+            isListening = false;
+          });
+
+          audio.addEventListener("ended", () => {
+            isListening = false;
+          });
+        } else {
+          trackPreview.textContent = "Không có bản xem trước cho bài hát này.";
         }
 
-        function startListening() {
-          listeningTime = 0;
-          const interval = setInterval(() => {
-            listeningTime++;
-
-            if (listeningTime >= targetListeningTime) {
-              clearInterval(interval);
-              completeListening();
-            }
-          }, 1000);
-
-          audio.addEventListener("pause", () => clearInterval(interval));
-          audio.addEventListener("ended", () => clearInterval(interval));
-        }
-
-        async function completeListening() {
-          try {
-
-            const token = localStorage.getItem("token");
-            // Lấy dữ liệu người dùng hiện tại từ API
-            const response = await fetch(getUserPublicKeyUrl, {
-              method: "GET",
-              headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            });
-            if (!response.ok)
-              throw new Error("Không lấy được dữ liệu người dùng.");
-            const userData = await response.json();
-
-            // Cập nhật số lần nghe và điểm
-            const updatedData = {
-              point: userData.point + 5, // Tăng điểm
-              songHeard: userData.songHeard + 1, // Tăng số lần nghe
-            };
-
-            // Gửi yêu cầu PUT để cập nhật
-            const updateResponse = await fetch(userUpdate, {
-              method: "PUT",
-              headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(updatedData),
-            });
-
-            if (updateResponse.ok) {
-              alert(
-                `Bạn đã nghe bài hát đủ 25 giây! Điểm của bạn là: ${updatedData.point}`
-              );
-            } else {
-              throw new Error("Không cập nhật được dữ liệu.");
-            }
-          } catch (error) {
-            console.error("Lỗi khi cập nhật dữ liệu:", error);
-            showMessage(
-              "Đã xảy ra lỗi khi cập nhật điểm và số lần nghe.",
-              "error"
-            );
+        playButton.addEventListener("click", () => {
+          if (audio) {
+            audio.currentTime = 0;
+            audio.play();
           }
-        }
-
-        function showMessage(message, type) {
-          messageDiv.textContent = message;
-          if (type === "success") {
-            messageDiv.className = "success";
-          } else if (type === "error") {
-            messageDiv.className = "error";
-          }
-        }
-
-        backButton.addEventListener("click", () => {
-          window.history.back();
         });
+      }
 
-        getAccessToken().then(() => {
-          const trackId = new URLSearchParams(window.location.search).get("id");
-          if (trackId) {
-            getTrackDetail(trackId);
+      function startListening() {
+        listeningTime = 0;
+        const interval = setInterval(() => {
+          listeningTime++;
+
+          if (listeningTime >= targetListeningTime) {
+            clearInterval(interval);
+            completeListening();
+          }
+        }, 1000);
+
+        audio.addEventListener("pause", () => clearInterval(interval));
+        audio.addEventListener("ended", () => clearInterval(interval));
+      }
+
+      async function completeListening() {
+        try {
+          const token = localStorage.getItem("token");
+          console.log(token);
+
+          const response = await fetch("http://localhost:3000/v1/auth/get_user_infor", {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+          if (!response.ok)
+            throw new Error("Không lấy được dữ liệu người dùng.");
+          const userData = await response.json();
+
+          const updatedData = {
+            point: userData.point + 5,
+            songHeard: userData.songHeard + 1,
+          };
+
+          const updateResponse = await fetch('http://localhost:3000/v1/auth/update', {
+            method: "PUT",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updatedData),
+          });
+
+          if (updateResponse.ok) {
+            alert(`Bạn đã nghe bài hát đủ 25 giây! Điểm của bạn là: ${updatedData.point}`);
           } else {
-            showMessage("Không có ID bài hát.", "error");
+            throw new Error("Không cập nhật được dữ liệu.");
           }
-        });
+        } catch (error) {
+          console.error("Lỗi khi cập nhật dữ liệu:", error);
+          showMessage("Đã xảy ra lỗi khi cập nhật điểm và số lần nghe.", "error");
+        }
+      }
+
+      function showMessage(message, type) {
+        messageDiv.textContent = message;
+        if (type === "success") {
+          messageDiv.className = "success";
+        } else if (type === "error") {
+          messageDiv.className = "error";
+        }
+      }
+
+      backButton.addEventListener("click", () => {
+        window.history.back();
       });
-    </script>
-  </body>
+
+      const trackId = new URLSearchParams(window.location.search).get("id");
+      if (trackId) {
+        getTrackDetail(trackId);
+      } else {
+        showMessage("Không có ID bài hát.", "error");
+      }
+    });
+  </script>
+</body>
+
 </html>

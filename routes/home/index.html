@@ -1,326 +1,278 @@
 <!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Danh Sách Bài Hát Spotify</title>
-    <link rel="stylesheet" href="style_index.css" />
-    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-  </head>
 
-  <body>
-    <h1>Danh Sách Bài Hát Spotify</h1>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Danh Sách Bài Hát Spotify</title>
+  <link rel="stylesheet" href="style_index.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+</head>
 
-    <!-- Form tìm kiếm bài hát -->
-    <div class="search-form">
-      <input
-        type="text"
-        id="searchQuery"
-        placeholder="Nhập từ khóa tìm kiếm..."
-        required
-      />
-      <button id="searchButton">Tìm Kiếm</button>
+<body>
+  <div class="container">
+    <div class="menu">
+      <h2><i class="fa-solid fa-music"></i> Menu</h2>
+      <ul>
+        <li><a href="../daily_task/daily_task.html"><i class="fa-solid fa-house"></i> Nhiệm Vụ Hàng Ngày</a></li>
+        <li><a href="../play_list/playlist.html"><i class="fa-solid fa-search"></i> Playlist</a></li>
+        <li><a href="../connectWallet/connect_wallet.html"><i class="fa-solid fa-heart"></i> Kết Nối Ví Phantom</a></li>
+        <li><a href="#"><i class="fa-solid fa-user"></i> Tài Khoản</a></li>
+      </ul>
     </div>
 
-    <!-- Thông báo trạng thái -->
-    <div id="status" class="loading">Đang tải dữ liệu...</div>
-    <div id="message"></div>
+    <div class="content">
+      <h1>Solasi</h1>
 
-    <a
-      href="../daily_task/daily_task.html"
-      style="display: block; text-align: center; margin: 20px 0; color: #1db954"
-      >Xem Nhiệm Vụ Hàng Ngày</a
-    >
+      <div class="search-form">
+        <input type="text" id="searchQuery" placeholder="Nhập từ khóa tìm kiếm..." required />
+        <button id="searchButton">Tìm Kiếm</button>
+        <div id="walletBalance" class="wallet-balance"></div>
+      </div>
 
-    <a
-      href="../play_list/playlist.html"
-      style="display: block; text-align: center; margin: 20px 0; color: #1db954"
-      >Xem Playlist</a
-    >
+      <div id="message"></div>
 
-    <!-- Nút kết nối ví Phantom -->
-    <a
-      href="../connectWallet/connect_wallet.html"
-      id="connectWalletButton"
-      style="display: block; text-align: center; margin: 20px 0; color: #1db954"
-    >
-      Kết Nối Ví Phantom
-    </a>
+      <ul id="tracksList" class="tracks-list"></ul>
+    </div>
+  </div>
 
-    <!-- Số dư ví -->
-    <div id="walletBalance" class="wallet-balance" style="text-align: center; margin: 20px 0; color: #1db954"></div>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const apiUrl = "https://api.deezer.com/search";
+      const playlistApiBaseUrl = "https://65bf081adcfcce42a6f31afe.mockapi.io/phuczk/demo_crud_api142857/playList";
+      const getUserPublicKeyUrl = "http://localhost:3000/v1/auth/get_user_infor";
 
-    <!-- Danh sách bài hát -->
-    <ul id="tracksList" class="tracks-list" style="display: none"></ul>
+      const statusDiv = document.getElementById("status");
+      const messageDiv = document.getElementById("message");
+      const tracksList = document.getElementById("tracksList");
+      const searchButton = document.getElementById("searchButton");
+      const searchQueryInput = document.getElementById("searchQuery");
+      const walletBalanceDiv = document.getElementById("walletBalance");
 
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const clientId = "7edacf5546fa4bb58e20f54e69e47079";
-        const clientSecret = "e538099ccc6b4da38cf1723b74542411";
-        const apiUrl = "https://api.spotify.com/v1/search";
-        const tokenUrl = "https://accounts.spotify.com/api/token";
-        const playlistApiBaseUrl =
-          "https://65bf081adcfcce42a6f31afe.mockapi.io/phuczk/demo_crud_api142857/playList";
-        const getUserPublicKeyUrl = "http://localhost:3000/v1/auth/get_user_infor";
+      let currentQuery = "";
+      let offset = 0;
+      const limit = 20;
+      let isLoading = false;
+      let hasMore = true;
+      const userId = localStorage.getItem("token");
 
-        const statusDiv = document.getElementById("status");
-        const messageDiv = document.getElementById("message");
-        const tracksList = document.getElementById("tracksList");
-        const searchButton = document.getElementById("searchButton");
-        const searchQueryInput = document.getElementById("searchQuery");
-        const walletBalanceDiv = document.getElementById("walletBalance");
-
-        let accessToken = "";
-        let currentQuery = "";
-        let offset = 0;
-        const limit = 20;
-        let isLoading = false;
-        let hasMore = true;
-
-        async function getAccessToken() {
-          const credentials = `${clientId}:${clientSecret}`;
-          const encodedCredentials = btoa(credentials);
-
-          try {
-            const response = await fetch(tokenUrl, {
-              method: "POST",
-              headers: {
-                Authorization: `Basic ${encodedCredentials}`,
-                "Content-Type": "application/x-www-form-urlencoded",
-              },
-              body: "grant_type=client_credentials",
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              accessToken = data.access_token;
-              console.log("Access Token:", accessToken);
-              if (currentQuery === "") {
-                loadMoreTracks();
-              }
-            } else {
-              const errorData = await response.json();
-              throw new Error(
-                `Failed to get access token: ${response.status} - ${
-                  errorData.error_description || response.statusText
-                }`
-              );
-            }
-          } catch (error) {
-            console.error("Error fetching access token:", error);
-            showMessage("Đã xảy ra lỗi khi lấy Access Token.", "error");
+      const tryFetch = async () => {
+        const url = 'https://deezerdevs-deezer.p.rapidapi.com/search?q=hay%20trao%20cho%20anh';
+        const options = {
+          method: 'GET',
+          headers: {
+            'x-rapidapi-key': 'b2fd2ef69emsh1bb0c506a6e52d9p145a41jsna65651cd5d00',
+            'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
           }
+        };
+
+        try {
+          const response = await fetch(url, options);
+          const result = await response.json(); // Parse JSON response
+
+          const trackListContainer = document.getElementById("tracksList");
+          trackListContainer.innerHTML = ""; // Clear previous list
+
+          displayTracks(result.data);
+
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      async function getUserPublicKey() {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          walletBalanceDiv.textContent = "Vui lòng đăng nhập để kết nối ví.";
+          return;
         }
 
-        async function getUserPublicKey() {
-          const token = localStorage.getItem("token");
-          if (!token) {
-            walletBalanceDiv.textContent = "Vui lòng đăng nhập để kết nối ví.";
-            return;
-          }
+        try {
+          const response = await fetch(getUserPublicKeyUrl, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
 
-          try {
-            const response = await fetch(getUserPublicKeyUrl, {
-              method: "GET",
+          if (response.ok) {
+            const data = await response.json();
+            const publicKey = data.publicKey;
+            if (publicKey) {
+              getWalletBalance(publicKey);
+            } else {
+              walletBalanceDiv.textContent = "Không tìm thấy public key.";
+            }
+          } else {
+            throw new Error("Failed to get public key from server");
+          }
+        } catch (error) {
+          console.error("Error fetching public key:", error);
+          walletBalanceDiv.textContent = "Không thể lấy public key.";
+        }
+      }
+
+      async function getWalletBalance(publicKey) {
+        try {
+          const connection = new solanaWeb3.Connection(
+            solanaWeb3.clusterApiUrl("devnet"),
+            "confirmed"
+          );
+
+          const balance = await connection.getBalance(new solanaWeb3.PublicKey(publicKey));
+          const balanceInSOL = balance / solanaWeb3.LAMPORTS_PER_SOL;
+
+          walletBalanceDiv.textContent = `Số dư ví: ${balanceInSOL} SOL`;
+        } catch (error) {
+          console.error("Lỗi khi lấy số dư ví:", error);
+          walletBalanceDiv.textContent = "Không thể lấy số dư ví.";
+        }
+      }
+
+      async function searchTracks(query, newSearch) {
+        // Loại bỏ khoảng trắng thừa và mã hóa chuỗi tìm kiếm
+        const sanitizedQuery = newSearch.trim().replace(/\s+/g, '%20');
+
+        const url = 'https://deezerdevs-deezer.p.rapidapi.com/search?q=' + sanitizedQuery;
+        const options = {
+          method: 'GET',
+          headers: {
+            'x-rapidapi-key': 'b2fd2ef69emsh1bb0c506a6e52d9p145a41jsna65651cd5d00',
+            'x-rapidapi-host': 'deezerdevs-deezer.p.rapidapi.com'
+          }
+        };
+
+        try {
+          const response = await fetch(url, options);
+          const result = await response.json(); // Parse JSON response
+
+          const trackListContainer = document.getElementById("tracksList");
+          trackListContainer.innerHTML = ""; // Clear previous list
+
+          displayTracks(result.data);
+
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+
+      function displayTracks(tracks) {
+        if (tracks.length === 0 && offset === 0) {
+          showMessage("Không tìm thấy bài hát nào.", "error");
+          tracksList.style.display = "none";
+          return;
+        }
+
+        tracks.forEach((track) => {
+          const listItem = document.createElement("li");
+          listItem.className = "track-item";
+
+          const albumImage = document.createElement("img");
+          albumImage.src = track.album.cover_medium || "https://via.placeholder.com/60";
+          albumImage.alt = track.title;
+          albumImage.className = "track-image";
+          listItem.appendChild(albumImage);
+
+          const trackInfo = document.createElement("div");
+          trackInfo.className = "track-info";
+
+          const trackName = document.createElement("a");
+          trackName.href = `../detail/detail.html?id=${track.id}`;
+          trackName.textContent = track.title;
+          trackName.className = "track-name";
+          trackInfo.appendChild(trackName);
+
+          const artists = track.artist.name;
+          const trackArtists = document.createElement("div");
+          trackArtists.textContent = artists;
+          trackArtists.className = "track-artists";
+          trackInfo.appendChild(trackArtists);
+
+          const addToPlaylistButton = document.createElement("button");
+          addToPlaylistButton.textContent = "Thêm vào Playlist";
+          addToPlaylistButton.className = "add-to-playlist-button";
+          addToPlaylistButton.addEventListener("click", () => addToPlaylist(track.id));
+          trackInfo.appendChild(addToPlaylistButton);
+
+          listItem.appendChild(trackInfo);
+          tracksList.appendChild(listItem);
+        });
+
+        tracksList.style.display = "block";
+      }
+
+      async function addToPlaylist(idSong) {
+        try {
+          const response = await fetch(`${playlistApiBaseUrl}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          const playlists = await response.json();
+          let playlist = playlists.find((p) => p.idUser === userId);
+
+          if (playlist) {
+            if (!playlist.idSong.includes(idSong)) {
+              playlist.idSong.push(idSong);
+            } else {
+              alert("Bài hát đã tồn tại trong playlist!");
+              return;
+            }
+
+            const putResponse = await fetch(`${playlistApiBaseUrl}/${playlist.id}`, {
+              method: "PUT",
+              body: JSON.stringify(playlist),
               headers: {
-                "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
             });
 
-            if (response.ok) {
-              const data = await response.json();
-              const publicKey = data.publicKey;
-              if (publicKey) {
-                getWalletBalance(publicKey);
-              } else {
-                walletBalanceDiv.textContent = "Không tìm thấy public key.";
-              }
+            if (putResponse.ok) {
+              alert("Playlist đã được cập nhật!");
             } else {
-              throw new Error("Failed to get public key from server");
+              console.error("Lỗi khi cập nhật playlist:", await putResponse.json());
             }
-          } catch (error) {
-            console.error("Error fetching public key:", error);
-            walletBalanceDiv.textContent = "Không thể lấy public key.";
-          }
-        }
-
-        async function getWalletBalance(publicKey) {
-          try {
-            // Kết nối với Solana Devnet
-            const connection = new solanaWeb3.Connection(
-              solanaWeb3.clusterApiUrl("devnet"),
-              "confirmed"
-            );
-
-            // Lấy số dư của địa chỉ ví
-            const balance = await connection.getBalance(new solanaWeb3.PublicKey(publicKey));
-            const balanceInSOL = balance / solanaWeb3.LAMPORTS_PER_SOL;
-
-            walletBalanceDiv.textContent = `Số dư ví: ${balanceInSOL} SOL`;
-          } catch (error) {
-            console.error("Lỗi khi lấy số dư ví:", error);
-            walletBalanceDiv.textContent = "Không thể lấy số dư ví.";
-          }
-        }
-
-        async function searchTracks(query, newSearch = true) {
-          if (!accessToken) {
-            showMessage("Access Token không hợp lệ.", "error");
-            return;
-          }
-
-          if (newSearch) {
-            offset = 0;
-            hasMore = true;
-            tracksList.innerHTML = "";
-          }
-
-          if (!hasMore) return;
-
-          isLoading = true;
-          showLoading(true);
-
-          try {
-            const response = await fetch(
-              `${apiUrl}?q=${encodeURIComponent(
-                query
-              )}&type=track&limit=${limit}&offset=${offset}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                },
-              }
-            );
-
-            if (response.ok) {
-              const data = await response.json();
-              const tracks = data.tracks.items.filter(
-                (track) => track.preview_url
-              );
-              displayTracks(tracks);
-              offset += limit;
-              hasMore = tracks.length === limit;
-            } else {
-              const errorData = await response.json();
-              throw new Error(
-                `Failed to fetch tracks: ${response.status} - ${errorData.error.message}`
-              );
-            }
-          } catch (error) {
-            console.error("Error fetching tracks:", error);
-            showMessage("Đã xảy ra lỗi khi tải danh sách bài hát.", "error");
-          } finally {
-            isLoading = false;
-            showLoading(false);
-          }
-        }
-
-        function displayTracks(tracks) {
-          if (tracks.length === 0 && offset === 0) {
-            showMessage(
-              "Không tìm thấy bài hát nào có bản xem trước.",
-              "error"
-            );
-            tracksList.style.display = "none";
-            return;
-          }
-
-          tracks.forEach((track) => {
-            const listItem = document.createElement("li");
-            listItem.className = "track-item";
-
-            const albumImage = document.createElement("img");
-            albumImage.src =
-              track.album.images[0]?.url || "https://via.placeholder.com/60";
-            albumImage.alt = track.name;
-            albumImage.className = "track-image";
-            listItem.appendChild(albumImage);
-
-            const trackInfo = document.createElement("div");
-            trackInfo.className = "track-info";
-
-            const trackName = document.createElement("a");
-            trackName.href = `../detail/detail.html?id=${track.id}`;
-            trackName.textContent = track.name;
-            trackName.className = "track-name";
-            trackInfo.appendChild(trackName);
-
-            const artists = track.artists
-              .map((artist) => artist.name)
-              .join(", ");
-            const trackArtists = document.createElement("div");
-            trackArtists.textContent = artists;
-            trackArtists.className = "track-artists";
-            trackInfo.appendChild(trackArtists);
-
-            const addToPlaylistButton = document.createElement("button");
-            addToPlaylistButton.textContent = "Thêm vào Playlist";
-            addToPlaylistButton.className = "add-to-playlist-button";
-            addToPlaylistButton.addEventListener("click", () =>
-              addToPlaylist(track.id)
-            );
-            trackInfo.appendChild(addToPlaylistButton);
-
-            listItem.appendChild(trackInfo);
-            tracksList.appendChild(listItem);
-          });
-
-          tracksList.style.display = "block";
-        }
-
-        function showMessage(message, type) {
-          messageDiv.textContent = message;
-          messageDiv.className =
-            type === "success" ? "success" : "error-message";
-          setTimeout(() => {
-            messageDiv.textContent = "";
-            messageDiv.className = "";
-          }, 5000);
-        }
-
-        function showLoading(show) {
-          statusDiv.style.display = show ? "block" : "none";
-        }
-
-        searchButton.addEventListener("click", async () => {
-          const query = searchQueryInput.value.trim();
-          if (query === "") {
-            showMessage("Vui lòng nhập từ khóa tìm kiếm.", "error");
-            return;
-          }
-
-          currentQuery = query;
-          offset = 0;
-          hasMore = true;
-          tracksList.innerHTML = "";
-          showMessage("", "");
-          searchTracks(query, true);
-        });
-
-        window.addEventListener("scroll", () => {
-          if (
-            window.innerHeight + window.scrollY >=
-              document.body.offsetHeight - 500 &&
-            !isLoading &&
-            hasMore
-          ) {
-            loadMoreTracks();
-          }
-        });
-
-        function loadMoreTracks() {
-          if (currentQuery === "") {
-            const defaultQuery = "hay trao cho anh";
-            searchTracks(defaultQuery, false);
           } else {
-            searchTracks(currentQuery, false);
-          }
-        }
+            const newPlaylist = {
+              idUser: userId,
+              idSong: [idSong],
+            };
 
-        // Lấy publicKey từ server nếu có và hiển thị số dư
-        getUserPublicKey();
-        getAccessToken();
+            const postResponse = await fetch(`${playlistApiBaseUrl}`, {
+              method: "POST",
+              body: JSON.stringify(newPlaylist),
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (postResponse.ok) {
+              alert("Playlist đã được tạo mới!");
+            } else {
+              console.error("Lỗi khi tạo playlist:", await postResponse.json());
+            }
+          }
+        } catch (error) {
+          console.error("Lỗi khi thêm vào playlist:", error);
+        }
+      }
+
+      searchButton.addEventListener("click", () => {
+        const searchQuery = searchQueryInput.value.trim();
+        if (searchQuery) {
+          currentQuery = searchQuery;
+          searchTracks(searchQuery, searchQuery);
+        }
       });
-    </script>
-  </body>
+
+      tryFetch();
+      getUserPublicKey();
+    });
+  </script>
+</body>
+
 </html>

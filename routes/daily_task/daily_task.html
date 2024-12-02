@@ -1,206 +1,251 @@
 <!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Nhiệm Vụ Hàng Ngày</title>
-    <link rel="stylesheet" href="style_daily_task.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/solana-web3.js/1.29.4/solanaWeb3.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-  </head>
-  <body>
-    <h1>Nhiệm Vụ Hàng Ngày</h1>
-    <div class="task-container">
-      <p>Điểm của bạn: <span id="points">0</span></p>
-      <p>Số bài hát đã nghe hôm nay: <span id="songsToday">0</span></p>
-      <p>Tổng số bài hát đã nghe: <span id="totalSongs">0</span></p>
-      <button id="checkInButton">Điểm danh hôm nay</button>
-      <button id="exchangeButton">Đổi điểm ra SOL</button>
-      <p class="message" id="message"></p>
 
-      <canvas id="dailyChart" class="chart"></canvas>
-    </div>
+<head>
+  <meta charset="UTF-8" />
+  <title>Nhiệm Vụ Hàng Ngày</title>
+  <link rel="stylesheet" href="style_daily_task.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/solana-web3.js/1.20.0/solanaWeb3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+</head>
 
-    <script>
-      const userId = localStorage.getItem("userId");
-      const userApiUrl = `http://localhost:3000/v1/auth/get_user_infor`;
-      const checkInApiUrl = `http://localhost:3000/v1/auth/check_in`;
-      let points = 0;
-      let songsToday = 0;
-      let totalSongs = 0;
-      let lastCheckInDate = "";
-      let publicKey = "";
-      let dailyPoints = [250, 500, 360, 900, 910, 1200, 500];
+<body>
+  <h1>Nhiệm Vụ Hàng Ngày</h1>
+  <div class="task-container">
+    <p>Điểm của bạn: <span id="points">0</span></p>
+    <p>Số bài hát đã nghe hôm nay: <span id="songsToday">0</span></p>
+    <p>Tổng số bài hát đã nghe: <span id="totalSongs">0</span></p>
+    <button id="checkInButton">Điểm danh hôm nay</button>
+    <button id="exchangeButton">Đổi điểm ra SOL</button>
+    <p class="message" id="message"></p>
 
-      // Khởi tạo biểu đồ
-      const ctx = document.getElementById("dailyChart").getContext("2d");
-      const dailyChart = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: [], // Các ngày
-          datasets: [
-            {
-              label: "Điểm Hàng Ngày",
-              data: dailyPoints, // Dữ liệu điểm
-              fill: false,
-              borderColor: "#16b335",
-              tension: 0.1,
-            },
-          ],
-        },
-      });
+    <canvas id="dailyChart" class="chart"></canvas>
+  </div>
 
-      function updateChartData() {
-        const chartLabels = []; // Tạo danh sách ngày cho biểu đồ, ví dụ: ['Ngày 1', 'Ngày 2', ...]
-        for (let i = 6; i >= 0; i--) {
-          const date = new Date();
-          date.setDate(date.getDate() - i);
-          chartLabels.push(date.toLocaleDateString());
-        }
+  <script>
+    const userId = localStorage.getItem("userId");
+    const userApiUrl = `http://localhost:3000/v1/auth/get_user_infor`;
+    const checkInApiUrl = `http://localhost:3000/v1/auth/check_in`;
+    let points = 0;
+    let songsToday = 0;
+    let totalSongs = 0;
+    let lastCheckInDate = "";
+    let publicKey = "";
+    let dailyPoints = [250, 500, 360, 900, 910, 1200, 500];
+    let recipientPublicKey = "";
 
-        // Cập nhật dữ liệu vào biểu đồ
-        dailyChart.data.labels = chartLabels; // Thêm nhãn (label) cho các ngày
-        dailyChart.data.datasets[0].data = dailyPoints; // Dữ liệu điểm cho biểu đồ
-        dailyChart.update(); // Cập nhật biểu đồ
+    // Khởi tạo biểu đồ
+    const ctx = document.getElementById("dailyChart").getContext("2d");
+    const dailyChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: [], // Các ngày
+        datasets: [
+          {
+            label: "Điểm Hàng Ngày",
+            data: dailyPoints, // Dữ liệu điểm
+            fill: false,
+            borderColor: "#16b335",
+            tension: 0.1,
+          },
+        ],
+      },
+    });
+
+    function updateChartData() {
+      const chartLabels = []; // Tạo danh sách ngày cho biểu đồ, ví dụ: ['Ngày 1', 'Ngày 2', ...]
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        chartLabels.push(date.toLocaleDateString());
       }
 
-      async function loadUserData() {
-        try {
-          const token  = localStorage.getItem('token');
-          const response = await fetch(userApiUrl, {
-              method: "GET",
-              headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            });
-          if (!response.ok)
-            throw new Error("Không lấy được dữ liệu người dùng.");
+      // Cập nhật dữ liệu vào biểu đồ
+      dailyChart.data.labels = chartLabels; // Thêm nhãn (label) cho các ngày
+      dailyChart.data.datasets[0].data = dailyPoints; // Dữ liệu điểm cho biểu đồ
+      dailyChart.update(); // Cập nhật biểu đồ
+    }
 
-          const userData = await response.json();
-          points = userData.point;
-          songsToday = userData.songsToday;
-          totalSongs = userData.songHeard;
-          lastCheckInDate = userData.lastCheckInDate || "";
-          publicKey = userData.publicKey || "";
+    async function loadUserData() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(userApiUrl, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (!response.ok)
+          throw new Error("Không lấy được dữ liệu người dùng.");
+
+        const userData = await response.json();
+        points = userData.point;
+        songsToday = userData.songsToday;
+        totalSongs = userData.songHeard;
+        lastCheckInDate = userData.lastCheckInDate || "";
+        publicKey = userData.publicKey || "";
+
+        document.getElementById("points").textContent = points;
+        document.getElementById("songsToday").textContent = songsToday;
+        document.getElementById("totalSongs").textContent = totalSongs;
+
+        updateChartData(); // Gọi hàm cập nhật biểu đồ
+      } catch (error) {
+        console.error("Lỗi khi lấy dữ liệu người dùng:", error);
+      }
+    }
+
+    async function updatePointsAndSongs() {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(checkInApiUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+        });
+
+        if (response.ok) {
+          const updatedData = await response.json();
+          points = updatedData.points;
+
 
           document.getElementById("points").textContent = points;
           document.getElementById("songsToday").textContent = songsToday;
           document.getElementById("totalSongs").textContent = totalSongs;
-
-          updateChartData(); // Gọi hàm cập nhật biểu đồ
-        } catch (error) {
-          console.error("Lỗi khi lấy dữ liệu người dùng:", error);
+          document.getElementById("message").textContent =
+            "Bạn đã điểm danh và được cộng 10 điểm!";
+          // dailyPoints.push(10); // Thêm điểm mới vào biểu đồ
+          // updateChartData(); // Cập nhật lại biểu đồ
+        } else {
+          throw new Error("Không cập nhật được dữ liệu.");
         }
+      } catch (error) {
+        console.error("Lỗi khi cập nhật dữ liệu:", error);
+        document.getElementById("message").textContent =
+          "Đã xảy ra lỗi khi cập nhật điểm và số lần nghe.";
       }
+    }
 
-      async function updatePointsAndSongs() {
+    async function connectWallet() {
+      if (window.solana && window.solana.isPhantom) {
         try {
-          const token = localStorage.getItem('token');
-          const response = await fetch(checkInApiUrl, {
+          const resp = await window.solana.connect();
+          recipientPublicKey = resp.publicKey.toString();
+          return resp.publicKey.toString();
+        } catch (err) {
+          console.error("Lỗi kết nối ví:", err);
+          return null;
+        }
+      } else {
+        alert("Vui lòng cài đặt Phantom Wallet.");
+        return null;
+      }
+    }
+
+    async function exchangePointsToSOL() {
+      const conversionRate = 0.01;
+      const minPointsForExchange = 100;
+
+      if (points >= minPointsForExchange) {
+        const solAmount = (points / 100) * conversionRate;
+
+        if (publicKey) {
+          const transaction = new solanaWeb3.Transaction().add(
+            solanaWeb3.SystemProgram.transfer({
+              fromPubkey: new solanaWeb3.PublicKey(publicKey),
+              toPubkey: new solanaWeb3.PublicKey(
+                "3VBTFWTjUUUXqruk32VQbuJxf7RHJoddWng88PGdH7Zu"
+              ),
+              lamports: solanaWeb3.LAMPORTS_PER_SOL * solAmount,
+            })
+          );
+
+          try {
+            const { signature } = await window.solana.signAndSendTransaction(
+              transaction
+            );
+            console.log("Transaction Signature:", signature);
+
+            points = 0;
+            await fetch(userApiUrl, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ point: points }),
+            });
+
+            document.getElementById("points").textContent = points;
+            document.getElementById(
+              "message"
+            ).textContent = `Bạn đã đổi ${solAmount.toFixed(
+              4
+            )} SOL thành công!`;
+          } catch (error) {
+            console.error("Lỗi khi đổi điểm sang SOL:", error);
+            document.getElementById("message").textContent =
+              "Đã xảy ra lỗi khi thực hiện giao dịch.";
+          }
+        } else {
+          document.getElementById("message").textContent =
+            "Không tìm thấy public key để thực hiện giao dịch.";
+        }
+      } else {
+        document.getElementById("message").textContent =
+          "Bạn cần ít nhất 100 điểm để đổi ra SOL!";
+      }
+    }
+
+    async function sendRequest() {
+      if (!recipientPublicKey) {
+        document.getElementById("message").textContent = "Vui lòng kết nối ví Phantom trước.";
+        return;
+      }
+      const data = {
+        points: points,
+      };
+      if (points > 100) {
+        try {
+          const token = await localStorage.getItem('token');
+          console.log(token);
+
+          const response = await fetch("http://localhost:3000/v1/transaction/redeem", {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${token}`,
               "Content-Type": "application/json"
             },
+            body: JSON.stringify(data),
           });
 
-          if (response.ok) {
-            const updatedData = await response.json();
-            points = updatedData.points;
-           
-
-            document.getElementById("points").textContent = points;
-            document.getElementById("songsToday").textContent = songsToday;
-            document.getElementById("totalSongs").textContent = totalSongs;
-            document.getElementById("message").textContent =
-              "Bạn đã điểm danh và được cộng 10 điểm!";
-            dailyPoints.push(10); // Thêm điểm mới vào biểu đồ
-            updateChartData(); // Cập nhật lại biểu đồ
+          const result = await response.json();
+          if (result.ok) {
+            document.getElementById("message").textContent = "Yêu cầu gửi thành công!";
+            console.log(result);
           } else {
-            throw new Error("Không cập nhật được dữ liệu.");
+            document.getElementById("message").textContent = "Yêu cầu gửi fail!";
+            console.log(result);
           }
         } catch (error) {
-          console.error("Lỗi khi cập nhật dữ liệu:", error);
-          document.getElementById("message").textContent =
-            "Đã xảy ra lỗi khi cập nhật điểm và số lần nghe.";
+          document.getElementById("message").textContent = "Đã xảy ra lỗi khi gửi yêu cầu.";
+          console.error("Lỗi khi gửi yêu cầu:", error);
         }
+      } else {
+        alert("can it nhat 100 diem de doi")
       }
+    }
 
-      async function connectWallet() {
-        if (window.solana && window.solana.isPhantom) {
-          try {
-            const resp = await window.solana.connect();
-            return resp.publicKey.toString();
-          } catch (err) {
-            console.error("Lỗi kết nối ví:", err);
-            return null;
-          }
-        } else {
-          alert("Vui lòng cài đặt Phantom Wallet.");
-          return null;
-        }
-      }
+    document
+      .getElementById("checkInButton")
+      .addEventListener("click", updatePointsAndSongs);
+    document
+      .getElementById("exchangeButton")
+      .addEventListener("click", sendRequest);
 
-      async function exchangePointsToSOL() {
-        const conversionRate = 0.01;
-        const minPointsForExchange = 100;
+    loadUserData();
+    connectWallet();
+  </script>
+</body>
 
-        if (points >= minPointsForExchange) {
-          const solAmount = (points / 100) * conversionRate;
-
-          if (publicKey) {
-            const transaction = new solanaWeb3.Transaction().add(
-              solanaWeb3.SystemProgram.transfer({
-                fromPubkey: new solanaWeb3.PublicKey(publicKey),
-                toPubkey: new solanaWeb3.PublicKey(
-                  "<Địa chỉ ví nhận trên devnet>"
-                ),
-                lamports: solanaWeb3.LAMPORTS_PER_SOL * solAmount,
-              })
-            );
-
-            try {
-              const { signature } = await window.solana.signAndSendTransaction(
-                transaction
-              );
-              console.log("Transaction Signature:", signature);
-
-              points = 0;
-              await fetch(userApiUrl, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ point: points }),
-              });
-
-              document.getElementById("points").textContent = points;
-              document.getElementById(
-                "message"
-              ).textContent = `Bạn đã đổi ${solAmount.toFixed(
-                4
-              )} SOL thành công!`;
-            } catch (error) {
-              console.error("Lỗi khi đổi điểm sang SOL:", error);
-              document.getElementById("message").textContent =
-                "Đã xảy ra lỗi khi thực hiện giao dịch.";
-            }
-          } else {
-            document.getElementById("message").textContent =
-              "Không tìm thấy public key để thực hiện giao dịch.";
-          }
-        } else {
-          document.getElementById("message").textContent =
-            "Bạn cần ít nhất 100 điểm để đổi ra SOL!";
-        }
-      }
-
-      document
-        .getElementById("checkInButton")
-        .addEventListener("click", updatePointsAndSongs);
-      document
-        .getElementById("exchangeButton")
-        .addEventListener("click", exchangePointsToSOL);
-
-      loadUserData();
-    </script>
-  </body>
 </html>

@@ -1,144 +1,261 @@
 body {
   font-family: Arial, sans-serif;
-  margin: 20px;
-  background-color: #f9f9f9;
+  margin: 0;
+  padding: 0;
+  background-color: #605c5b;
+  height: 100vh;
+  /* Đảm bảo body chiếm toàn bộ chiều cao màn hình */
+  overflow: hidden;
+}
+
+.container {
+  display: flex;
+}
+
+.menu {
+  width: 220px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  background-color: #605c5b;
+  padding: 10px 15px;
+  color: white;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.menu h2 {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+.menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.menu ul li {
+  margin: 10px 0;
+}
+
+.menu ul li a {
+  color: #d6d2d3;
+  text-decoration: none;
+  font-size: 18px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.menu ul li a i {
+  margin-right: 15px;
+  font-size: 20px;
+}
+
+.menu ul li a:hover {
+  color: #e6e5be;
+  background-color: #3f3b3c;
+  transform: translateX(8px);
+}
+
+.content {
+  background-color: #fff;
+  border-radius: 20px 0px 0px 20px;
+  box-shadow: #3f3b3c;
+  margin-left: 250px;
+  height: 100vh;
+  width: calc(100% - 220px);
 }
 
 h1 {
-  text-align: center;
-  color: #1DB954;
-}
-
-.loading {
-  font-size: 18px;
-  color: #555;
-  text-align: center;
-}
-
-.error-message {
-  color: red;
-  font-weight: bold;
-  text-align: center;
-}
-
-.success {
-  color: green;
-  font-weight: bold;
+  color: #1db954;
   text-align: center;
   margin-bottom: 20px;
 }
 
-/* Kiểu cho danh sách bài hát */
+.track-name {
+  font-size: 20px;
+  font-weight: bold;
+  color: #1db954;
+  text-decoration: none;
+  transition: color 0.3s ease;
+
+  display: block;
+  /* Đảm bảo phần tử chiếm một dòng */
+  max-width: 600px;
+  /* Giới hạn độ dài tối đa (thay đổi giá trị này tùy thuộc vào độ dài mong muốn) */
+  overflow: hidden;
+  /* Ẩn phần thừa ra ngoài */
+  text-overflow: ellipsis;
+  /* Thêm dấu ba chấm nếu tên bài hát quá dài */
+  white-space: nowrap;
+  /* Ngăn không cho tên bài hát xuống dòng */
+}
+
+/* .search-form {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #ffffff;
+  border-radius: 50px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  padding: 12px 20px;
+  width: 100%;
+  max-width: 600px;
+  transition: all 0.3s ease-in-out;
+
+  justify-self: center;
+} */
+
+/* .search-form:hover {
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+} */
+
+.search-form input {
+  padding: 10px;
+  width: 80%;
+  max-width: 700px;
+  height: 30px;
+  margin-right: 10px;
+  background-color: #ececec;
+  border: none;
+  border-radius: 5px;
+  margin-left: 20px;
+}
+
+.search-form button {
+  padding: 12px 24px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: 10px;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.search-form button:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+}
+
+.search-form input:hover {
+  background-color: #e2e2e2;
+  transform: translateY(-2px);
+}
+
+
+.search-form button:active {
+  transform: translateY(2px);
+}
+
+
 .tracks-list {
   list-style-type: none;
   padding: 0;
-  max-width: 800px;
-  margin: 0 auto;
+  max-height: 500px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+}
+
+.tracks-list::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Edge */
 }
 
 .track-item {
   display: flex;
   align-items: center;
-  background-color: #fff;
-  margin-bottom: 10px;
-  padding: 10px;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.3s;
+  background-color: #ffffff;
+  padding: 15px;
+  margin-right: 10px;
+  margin-left: 10px;
+  margin-top: 10px;
+  border-radius: 15px;
+  box-shadow: 8px 8px 16px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .track-item:hover {
-  background-color: #f1f1f1;
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
 }
 
 .track-image {
-  width: 60px;
-  height: 60px;
-  border-radius: 5px;
-  object-fit: cover;
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
   margin-right: 20px;
+  object-fit: cover;
 }
 
 .track-info {
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .track-name {
-  font-size: 16px;
-  color: #1DB954;
+  font-size: 20px;
+  font-weight: bold;
+  color: #1db954;
   text-decoration: none;
+  transition: color 0.3s ease;
 }
 
 .track-name:hover {
+  color: #14833b;
   text-decoration: underline;
 }
 
 .track-artists {
-  font-size: 14px;
-  color: #555;
-}
-
-/* Nút thêm và xóa */
-.actions {
-  margin-top: 20px;
-  text-align: center;
-}
-
-.actions button {
-  padding: 10px 20px;
-  background-color: #1DB954;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
   font-size: 16px;
-  transition: background-color 0.3s;
-}
-
-.actions button:hover {
-  background-color: #17a44d;
-}
-
-/* Form tìm kiếm */
-.search-form {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.search-form input {
-  padding: 10px;
-  width: 300px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 16px;
-}
-
-.search-form button {
-  padding: 10px 20px;
-  margin-left: 10px;
-  background-color: #1DB954;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.3s;
-}
-
-.search-form button:hover {
-  background-color: #17a44d;
+  color: #666;
+  margin-top: 5px;
 }
 
 .add-to-playlist-button {
-  background-color: #1db954;
-  color: #fff;
+  padding: 8px 15px;
+  background-color: #ff6b6b;
+  color: white;
   border: none;
-  padding: 5px 10px;
-  margin-top: 5px;
-  cursor: pointer;
+  border-radius: 20px;
   font-size: 14px;
-  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  align-self: flex-start;
+  margin-top: 10px;
 }
+
 .add-to-playlist-button:hover {
-  background-color: #17a743;
+  background-color: #d95b5b;
+  transform: scale(1.05);
+}
+
+
+.wallet-balance {
+  text-align: center;
+  margin: 20px 0;
+  color: #1db954;
+}
+
+.loading {
+  text-align: center;
+  color: #555;
+}
+
+.error-message {
+  color: red;
 }
