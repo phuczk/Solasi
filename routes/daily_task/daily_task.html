@@ -205,7 +205,7 @@
       const data = {
         points: points,
       };
-      if (points > 100) {
+      if (points => 100) {
         try {
           const token = await localStorage.getItem('token');
           console.log(token);
@@ -220,13 +220,7 @@
           });
 
           const result = await response.json();
-          if (result.ok) {
-            document.getElementById("message").textContent = "Yêu cầu gửi thành công!";
-            console.log(result);
-          } else {
-            document.getElementById("message").textContent = "Yêu cầu gửi fail!";
-            console.log(result);
-          }
+         alert(result.message);
         } catch (error) {
           document.getElementById("message").textContent = "Đã xảy ra lỗi khi gửi yêu cầu.";
           console.error("Lỗi khi gửi yêu cầu:", error);
